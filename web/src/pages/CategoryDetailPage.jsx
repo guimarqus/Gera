@@ -1,0 +1,5 @@
+import { useParams, Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { api } from '../services/api.js';
+import { EmptyState, ErrorState, PageHeader, Skeleton } from '../design/components.jsx';
+export default function CategoryDetailPage() { const { id } = useParams(); const q = useQuery({ queryKey: ['categorias'], queryFn: api.categories }); if (q.isPending) return <div className="page-content"><Skeleton /></div>; if (q.isError) return <div className="page-content"><ErrorState onRetry={() => q.refetch()} /></div>; const all = (q.data?.categorias || q.data || []).flatMap(x => [x, ...(x.subcategorias || [])]); const category = all.find(x => String(x.id) === id); return <div className="page-content"><PageHeader eyebrow={<Link to="/categorias">Categorias</Link>} title={category?.nome || 'Categoria'} description="Serviços desta categoria." />{category ? <EmptyState title="Em breve" description="Os profissionais e serviços desta categoria serão exibidos aqui." /> : <EmptyState title="Categoria não encontrada" description="Volte à lista para escolher uma categoria disponível." />}</div>; }

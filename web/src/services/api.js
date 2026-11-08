@@ -2,8 +2,15 @@ let accessToken = null;
 export const setAccessToken = token => { accessToken = token; };
 const base = import.meta.env.VITE_API_BASE || '/api';
 class ApiError extends Error { constructor(message, status, data) { super(message); this.status = status; this.data = data; } }
-let refreshing = null;
-let startupRefresh = null;
+let refreshPromise = null;
+function refreshOnce() {
+  if (!refreshPromise) {
+    refreshPromise = request('/auth/refresh', { method: 'POST' }, false)
+      .then(result => { setAccessToken(result.accessToken); return result; })
+      .finally(() => { refreshPromise = null; });
+  }
+  return refreshPromise;
+}
 async function request(path, options = {}, retry = true) {
   const headers = new Headers(options.headers || {});
   if (options.body && !(options.body instanceof FormData)) headers.set('Content-Type', 'application/json');
@@ -12,8 +19,7 @@ async function request(path, options = {}, retry = true) {
   try { response = await fetch(`${base}${path}`, { ...options, headers, credentials: 'include' }); }
   catch { throw new ApiError('Não foi possível conectar ao servidor. Verifique se a API está rodando.', 0); }
   if (response.status === 401 && retry && path !== '/auth/refresh' && path !== '/auth/login') {
-    refreshing ||= request('/auth/refresh', { method: 'POST' }, false).finally(() => { refreshing = null; });
-    try { const result = await refreshing; setAccessToken(result.accessToken); return request(path, options, false); } catch {}
+    try { await refreshOnce(); return request(path, options, false); } catch {}
   }
   const data = response.status === 204 ? null : await response.json().catch(() => null);
   if (!response.ok) {
@@ -26,12 +32,11 @@ const json = body => JSON.stringify(body);
 export const api = {
   login: body => request('/auth/login', { method: 'POST', body: json(body) }, false),
   register: body => request('/auth/register', { method: 'POST', body: json(body) }, false),
-  refresh: () => {
-    startupRefresh ||= request('/auth/refresh', { method: 'POST' }, false).finally(() => { startupRefresh = null; });
-    return startupRefresh;
-  },
+  refresh: refreshOnce,
   logout: () => request('/auth/logout', { method: 'POST' }, false),
   me: () => request('/auth/eu'),
+  profileSummary: () => request('/perfil/resumo'),
+  categories: () => request('/categorias'),
   forgotPassword: body => request('/auth/esqueci-senha', { method: 'POST', body: json(body) }, false),
   resetPassword: body => request('/auth/redefinir-senha', { method: 'POST', body: json(body) }, false),
 };

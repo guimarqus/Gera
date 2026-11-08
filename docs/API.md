@@ -63,3 +63,22 @@ Use `credentials: include` para refresh e logout. Tokens de acesso duram 15 minu
 Fora de Development, o sender atual não envia mensagens; conecte um provedor de e-mail antes de habilitar recuperação em produção.
 
 O limite padrão para cada endereço IP é de 10 requisições por minuto nos endpoints de autenticação; novas tentativas recebem `429`.
+
+## Categorias
+
+`GET /categorias` e publico e devolve categorias ativas em arvore. A resposta fica em cache em memoria na API por 30 minutos.
+
+```json
+[
+  { "id": 1, "nome": "Casa", "descricao": "Servicos para casa", "icone": null,
+    "subcategorias": [{ "id": 2, "nome": "Eletrica", "descricao": null, "icone": null, "subcategorias": [] }] }
+]
+```
+
+## Resumo do perfil
+
+`GET /perfil/resumo` exige access token. O identificador do usuario e obtido exclusivamente do claim `sub`.
+
+```json
+{ "nome": "Maria Silva", "fotoUrl": null, "papeis": ["Cliente"], "papelAtivo": "Cliente" }
+```

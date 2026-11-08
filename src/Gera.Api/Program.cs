@@ -4,6 +4,7 @@ using Microsoft.OpenApi.Models;
 using Serilog;
 using Gera.Application.Auth;
 using Gera.Infrastructure.Services;
+using Gera.Application.Catalog;
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -23,7 +24,10 @@ builder.Host.UseSerilog((context, services, configuration) => configuration
 
 // Serviços de Infraestrutura (AppDbContext, Identity, SQL Server + NetTopologySuite)
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddMemoryCache();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<ICategoriasService, CategoriasService>();
+builder.Services.AddScoped<IProfileSummaryService, ProfileSummaryService>();
 builder.Services.AddSingleton<ITokenService, TokenService>();
 builder.Services.AddScoped<IEmailSender>(provider => builder.Environment.IsDevelopment()
     ? ActivatorUtilities.CreateInstance<DevelopmentEmailSender>(provider)

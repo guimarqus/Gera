@@ -63,3 +63,11 @@ npm run build
 ```
 
 Os detalhes dos endpoints estão em [docs/API.md](docs/API.md); as políticas em [docs/REGRAS-DE-NEGOCIO.md](docs/REGRAS-DE-NEGOCIO.md); a decisão de armazenamento de tokens em [docs/DECISOES.md](docs/DECISOES.md).
+
+## Etapa 3: interface e sessoes
+
+O React usa tokens/componentes em `web/src/design`, layout e rotas em `web/src/layout` e `web/src/routing`; o mapa esta em [docs/FRONTEND.md](docs/FRONTEND.md). As paginas de servicos ainda usam conteudo provisório, exceto Categorias, que consulta `GET /api/categorias`.
+
+A tolerancia de reutilizacao do refresh concorrente e configuravel por `Auth:RefreshReuseGraceSeconds` (padrao 10 segundos). O cliente compartilha uma unica chamada de refresh em andamento. O endpoint `GET /api/perfil/resumo` fornece nome, foto, papeis e papel ativo.
+
+Na pasta `web`, use `npm run test` para os testes React (Vitest + Testing Library), alem de `npm run build`. O envio real de e-mail para recuperacao de senha ainda precisa ser integrado antes da producao.

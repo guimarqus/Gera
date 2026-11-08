@@ -90,3 +90,11 @@ No Kanban de serviços, dois usuários (cliente e prestador) podem interagir sim
 O access token JWT, de vida curta (15 minutos), é retornado no corpo e mantido somente em memória no React. O refresh token aleatório é enviado exclusivamente em cookie `HttpOnly`, `Secure`, `SameSite=Strict`, limitado a `/api/auth`; a API armazena somente o hash SHA-256 e rotaciona o token a cada uso.
 
 Essa escolha evita persistir o JWT em `localStorage` e impede que scripts do navegador leiam diretamente o refresh token. A rotação permite detectar reapresentação de token já revogado e revogar os refresh tokens ativos da conta. O cliente precisa enviar credenciais para refresh/logout; produção deve servir frontend e API em contexto seguro HTTPS.
+
+## ADR 006: tolerancia para refresh concorrente e envio de e-mail
+
+- **Status:** aceito — Etapa 3.
+
+O cliente React compartilha uma unica promessa de refresh por vez. A API aceita por 10 segundos, configuraveis em `Auth:RefreshReuseGraceSeconds`, a reapresentacao de um refresh token que acabou de ser rotacionado e devolve a mesma rotacao guardada somente em memoria. Fora dessa janela, considera reutilizacao como roubo e revoga a cadeia do usuario. Tokens persistidos no banco continuam sendo apenas hashes.
+
+O sender de desenvolvimento apenas registra o link de recuperacao no log. **O envio real de e-mail continua pendente e deve ser implementado antes da producao.**

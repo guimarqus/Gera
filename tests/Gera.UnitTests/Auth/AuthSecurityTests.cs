@@ -72,6 +72,17 @@ public sealed class AuthSecurityTests
     }
 
     [Fact]
+    public void RotatedTokenReuse_IsAllowedOnlyInsideConfiguredGraceWindow()
+    {
+        var now = DateTime.UtcNow;
+        var recentlyRotated = new RefreshToken { RevogadoEm = now.AddSeconds(-9), SubstituidoPorHash = "child" };
+        RefreshTokenRotation.IsWithinGrace(recentlyRotated, now, TimeSpan.FromSeconds(10)).Should().BeTrue();
+        RefreshTokenRotation.IsWithinGrace(recentlyRotated, now, TimeSpan.FromSeconds(8)).Should().BeFalse();
+        recentlyRotated.SubstituidoPorHash = null;
+        RefreshTokenRotation.IsWithinGrace(recentlyRotated, now, TimeSpan.FromSeconds(10)).Should().BeFalse();
+    }
+
+    [Fact]
     public void RegistrationValidator_RejectsInvalidEmailPasswordPhoneAndMissingConsents()
     {
         var validator = new RegisterRequestValidator();

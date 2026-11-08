@@ -3,6 +3,7 @@ using Gera.Domain.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Caching.Memory;
 using System.Text;
 
 namespace Gera.Application.Auth;
@@ -13,9 +14,12 @@ public sealed class AuthService(
     IAppDbContext db,
     ITokenService tokenService,
     IEmailSender emailSender,
-    IConfiguration configuration) : IAuthService
+    IConfiguration configuration,
+    IMemoryCache cache) : IAuthService
 {
+    private static readonly SemaphoreSlim RefreshSync = new(1, 1);
     private readonly int _refreshTokenDays = int.TryParse(configuration["JwtSettings:RefreshTokenExpirationInDays"], out var days) ? Math.Clamp(days, 1, 30) : 7;
+    private readonly TimeSpan _refreshReuseGrace = TimeSpan.FromSeconds(int.TryParse(configuration["Auth:RefreshReuseGraceSeconds"], out var graceSeconds) ? Math.Clamp(graceSeconds, 0, 60) : 10);
     public async Task<TokenPair?> LoginAsync(LoginRequest request, string? ip, CancellationToken cancellationToken = default)
     {
         var user = await userManager.FindByNameAsync(request.UsuarioOuEmail)
@@ -44,23 +48,33 @@ public sealed class AuthService(
     public async Task<TokenPair?> RefreshAsync(string refreshToken, string? ip, CancellationToken cancellationToken = default)
     {
         var hash = tokenService.HashRefreshToken(refreshToken);
-        var current = await db.RefreshTokens.SingleOrDefaultAsync(x => x.TokenHash == hash, cancellationToken);
-        if (current is null) return null;
-        if (current.RevogadoEm is not null)
+        await RefreshSync.WaitAsync(cancellationToken);
+        try
         {
-            var chain = await db.RefreshTokens.Where(x => x.UsuarioId == current.UsuarioId && x.RevogadoEm == null).ToListAsync(cancellationToken);
-            RefreshTokenRotation.RevokeActiveChain(chain, DateTime.UtcNow);
+            var current = await db.RefreshTokens.SingleOrDefaultAsync(x => x.TokenHash == hash, cancellationToken);
+            if (current is null) return null;
+            if (current.RevogadoEm is not null)
+            {
+                if (RefreshTokenRotation.IsWithinGrace(current, DateTime.UtcNow, _refreshReuseGrace))
+                    return cache.TryGetValue<TokenPair>(hash, out var cached) ? cached : null;
+
+                var chain = await db.RefreshTokens.Where(x => x.UsuarioId == current.UsuarioId && x.RevogadoEm == null).ToListAsync(cancellationToken);
+                RefreshTokenRotation.RevokeActiveChain(chain, DateTime.UtcNow);
+                await db.SaveChangesAsync(cancellationToken);
+                return null;
+            }
+            if (current.ExpiraEm <= DateTime.UtcNow) return null;
+            var user = await userManager.FindByIdAsync(current.UsuarioId.ToString());
+            if (user is null || !user.Ativo) return null;
+            var replacement = CreateTokenPair(user);
+            RefreshTokenRotation.Rotate(current, tokenService.HashRefreshToken(replacement.RefreshToken), DateTime.UtcNow);
+            db.RefreshTokens.Add(CreateRefreshEntity(user.Id, replacement.RefreshToken, ip));
             await db.SaveChangesAsync(cancellationToken);
-            return null;
+            if (_refreshReuseGrace > TimeSpan.Zero)
+                cache.Set(hash, replacement, _refreshReuseGrace);
+            return replacement;
         }
-        if (current.ExpiraEm <= DateTime.UtcNow) return null;
-        var user = await userManager.FindByIdAsync(current.UsuarioId.ToString());
-        if (user is null || !user.Ativo) return null;
-        var replacement = CreateTokenPair(user);
-        RefreshTokenRotation.Rotate(current, tokenService.HashRefreshToken(replacement.RefreshToken), DateTime.UtcNow);
-        db.RefreshTokens.Add(CreateRefreshEntity(user.Id, replacement.RefreshToken, ip));
-        await db.SaveChangesAsync(cancellationToken);
-        return replacement;
+        finally { RefreshSync.Release(); }
     }
 
     public async Task LogoutAsync(string? refreshToken, CancellationToken cancellationToken = default)
