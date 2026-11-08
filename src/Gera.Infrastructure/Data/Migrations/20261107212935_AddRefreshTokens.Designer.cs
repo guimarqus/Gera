@@ -13,8 +13,8 @@ using NetTopologySuite.Geometries;
 namespace Gera.Infrastructure.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20261107210001_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20261107212935_AddRefreshTokens")]
+    partial class AddRefreshTokens
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -1089,6 +1089,49 @@ namespace Gera.Infrastructure.Data.Migrations
                     b.ToTable("Pagamentos", (string)null);
                 });
 
+            modelBuilder.Entity("Gera.Domain.Entities.RefreshToken", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CriadoEm")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("ExpiraEm")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("IpCriacao")
+                        .HasMaxLength(45)
+                        .HasColumnType("nvarchar(45)");
+
+                    b.Property<DateTime?>("RevogadoEm")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("SubstituidoPorHash")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<int>("UsuarioId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique();
+
+                    b.HasIndex("UsuarioId", "ExpiraEm");
+
+                    b.ToTable("RefreshTokens", (string)null);
+                });
+
             modelBuilder.Entity("Gera.Domain.Entities.Solicitacao", b =>
                 {
                     b.Property<int>("Id")
@@ -1219,6 +1262,12 @@ namespace Gera.Infrastructure.Data.Migrations
                     b.Property<int>("AccessFailedCount")
                         .HasColumnType("int");
 
+                    b.Property<bool>("AceitouPrivacidade")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("AceitouTermos")
+                        .HasColumnType("bit");
+
                     b.Property<bool>("Ativo")
                         .HasColumnType("bit");
 
@@ -1299,18 +1348,17 @@ namespace Gera.Infrastructure.Data.Migrations
                     b.Property<bool>("PhoneNumberConfirmed")
                         .HasColumnType("bit");
 
+                    b.Property<DateTime?>("PrivacidadeAceitaEm")
+                        .HasColumnType("datetime2");
+
                     b.Property<int>("RaioAtendimentoPadraoKm")
                         .HasColumnType("int");
 
-                    b.Property<string>("RefreshToken")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<DateTime?>("RefreshTokenExpiracao")
-                        .HasColumnType("datetime2");
-
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("TermosAceitosEm")
+                        .HasColumnType("datetime2");
 
                     b.Property<bool>("TwoFactorEnabled")
                         .HasColumnType("bit");
@@ -1485,7 +1533,7 @@ namespace Gera.Infrastructure.Data.Migrations
                     b.HasOne("Gera.Domain.Entities.Solicitacao", "Solicitacao")
                         .WithMany("Avaliacoes")
                         .HasForeignKey("SolicitacaoId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Avaliado");
@@ -1570,7 +1618,7 @@ namespace Gera.Infrastructure.Data.Migrations
                     b.HasOne("Gera.Domain.Entities.Solicitacao", "Solicitacao")
                         .WithMany("Mensagens")
                         .HasForeignKey("SolicitacaoId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Orcamento");
@@ -1668,7 +1716,7 @@ namespace Gera.Infrastructure.Data.Migrations
                     b.HasOne("Gera.Domain.Entities.Solicitacao", "Solicitacao")
                         .WithMany("Pagamentos")
                         .HasForeignKey("SolicitacaoId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Pagador");
@@ -1676,6 +1724,17 @@ namespace Gera.Infrastructure.Data.Migrations
                     b.Navigation("Recebedor");
 
                     b.Navigation("Solicitacao");
+                });
+
+            modelBuilder.Entity("Gera.Domain.Entities.RefreshToken", b =>
+                {
+                    b.HasOne("Gera.Domain.Entities.Usuario", "Usuario")
+                        .WithMany()
+                        .HasForeignKey("UsuarioId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Usuario");
                 });
 
             modelBuilder.Entity("Gera.Domain.Entities.Solicitacao", b =>

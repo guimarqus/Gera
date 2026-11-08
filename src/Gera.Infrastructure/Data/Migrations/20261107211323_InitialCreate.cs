@@ -465,7 +465,7 @@ namespace Gera.Infrastructure.Data.Migrations
                         column: x => x.SolicitacaoId,
                         principalTable: "Solicitacoes",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_Avaliacoes_Usuarios_AvaliadoId",
                         column: x => x.AvaliadoId,
@@ -538,7 +538,7 @@ namespace Gera.Infrastructure.Data.Migrations
                         column: x => x.SolicitacaoId,
                         principalTable: "Solicitacoes",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_Pagamentos_Usuarios_PagadorId",
                         column: x => x.PagadorId,
@@ -612,7 +612,7 @@ namespace Gera.Infrastructure.Data.Migrations
                         column: x => x.SolicitacaoId,
                         principalTable: "Solicitacoes",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_Mensagens_Usuarios_RemetenteId",
                         column: x => x.RemetenteId,

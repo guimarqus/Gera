@@ -26,7 +26,7 @@ public class MensagemConfiguration : IEntityTypeConfiguration<Mensagem>
         builder.HasOne(m => m.Solicitacao)
             .WithMany(s => s.Mensagens)
             .HasForeignKey(m => m.SolicitacaoId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasOne(m => m.Remetente)
             .WithMany(u => u.Mensagens)

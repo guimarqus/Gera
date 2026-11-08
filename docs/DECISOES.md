@@ -83,3 +83,10 @@ No Kanban de serviços, dois usuários (cliente e prestador) podem interagir sim
 - `GlobalExceptionHandlerMiddleware` captura exceções de domínio (`NotFoundException`, `NaoAutorizadoException`, `TransicaoInvalidaException`, `DomainException`) e serializa em `ProblemDetails` (`application/problem+json`).
 - Registro explícito de `services.AddDataProtection()` na camada de infraestrutura para permitir geração segura de tokens Identity sem dependência implícita de outros subsistemas.
 
+# ADR: refresh token em cookie HttpOnly e access token em memória
+
+**Status:** aceito — Etapa 2.
+
+O access token JWT, de vida curta (15 minutos), é retornado no corpo e mantido somente em memória no React. O refresh token aleatório é enviado exclusivamente em cookie `HttpOnly`, `Secure`, `SameSite=Strict`, limitado a `/api/auth`; a API armazena somente o hash SHA-256 e rotaciona o token a cada uso.
+
+Essa escolha evita persistir o JWT em `localStorage` e impede que scripts do navegador leiam diretamente o refresh token. A rotação permite detectar reapresentação de token já revogado e revogar os refresh tokens ativos da conta. O cliente precisa enviar credenciais para refresh/logout; produção deve servir frontend e API em contexto seguro HTTPS.

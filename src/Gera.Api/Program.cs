@@ -2,6 +2,15 @@ using Gera.Api.Middlewares;
 using Gera.Infrastructure;
 using Microsoft.OpenApi.Models;
 using Serilog;
+using Gera.Application.Auth;
+using Gera.Infrastructure.Services;
+using FluentValidation;
+using FluentValidation.AspNetCore;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,10 +23,41 @@ builder.Host.UseSerilog((context, services, configuration) => configuration
 
 // Serviços de Infraestrutura (AppDbContext, Identity, SQL Server + NetTopologySuite)
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddSingleton<ITokenService, TokenService>();
+builder.Services.AddScoped<IEmailSender>(provider => builder.Environment.IsDevelopment()
+    ? ActivatorUtilities.CreateInstance<DevelopmentEmailSender>(provider)
+    : ActivatorUtilities.CreateInstance<NullEmailSender>(provider));
 
 // Controladores e FluentValidation
 builder.Services.AddControllers();
+builder.Services.AddFluentValidationAutoValidation();
+builder.Services.AddValidatorsFromAssemblyContaining<RegisterRequestValidator>();
 builder.Services.AddEndpointsApiExplorer();
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>
+{
+    var jwtSecret = builder.Configuration["JwtSettings:Secret"];
+    if (string.IsNullOrWhiteSpace(jwtSecret) || Encoding.UTF8.GetByteCount(jwtSecret) < 32)
+        throw new InvalidOperationException("Configure JwtSettings:Secret com ao menos 32 bytes via User Secrets.");
+    options.MapInboundClaims = false;
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true, ValidIssuer = builder.Configuration["JwtSettings:Issuer"] ?? "GeraApi",
+        ValidateAudience = true, ValidAudience = builder.Configuration["JwtSettings:Audience"] ?? "GeraWeb",
+        ValidateIssuerSigningKey = true, IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret)),
+        ValidateLifetime = true, ClockSkew = TimeSpan.Zero, NameClaimType = "name"
+    };
+});
+builder.Services.AddAuthorization(options => options.FallbackPolicy = new AuthorizationPolicyBuilder()
+    .RequireAuthenticatedUser().Build());
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddPolicy("auth", context => RateLimitPartition.GetFixedWindowLimiter(
+        context.Connection.RemoteIpAddress?.ToString() ?? "ip-desconhecido",
+        _ => new FixedWindowRateLimiterOptions { PermitLimit = 10, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
+});
 
 // Configuração do Swagger com suporte a Bearer JWT
 builder.Services.AddSwaggerGen(c =>
@@ -59,7 +99,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("FrontendPolicy", policy =>
     {
-        policy.WithOrigins("http://localhost:5173", "http://localhost:3000")
+        policy.WithOrigins(builder.Configuration["Frontend:Origin"] ?? "http://localhost:5173", "http://127.0.0.1:5173")
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials();
@@ -83,10 +123,11 @@ if (app.Environment.IsDevelopment())
 
 app.UseSerilogRequestLogging();
 
-app.UseHttpsRedirection();
-
 app.UseCors("FrontendPolicy");
 
+app.UseHttpsRedirection();
+
+app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 
@@ -98,7 +139,7 @@ app.MapGet("/api/health", () => Results.Ok(new
     status = "Healthy",
     timestamp = DateTime.UtcNow,
     app = "Gera API"
-})).WithName("HealthCheck");
+})).WithName("HealthCheck").AllowAnonymous();
 
 app.Run();
 

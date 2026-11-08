@@ -25,7 +25,7 @@ public class PagamentoConfiguration : IEntityTypeConfiguration<Pagamento>
         builder.HasOne(p => p.Solicitacao)
             .WithMany(s => s.Pagamentos)
             .HasForeignKey(p => p.SolicitacaoId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasOne(p => p.Pagador)
             .WithMany(u => u.PagamentosFeitos)

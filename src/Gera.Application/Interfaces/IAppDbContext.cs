@@ -8,6 +8,7 @@ public interface IAppDbContext
 {
     DbSet<Usuario> Usuarios { get; }
     DbSet<Categoria> Categorias { get; }
+    DbSet<RefreshToken> RefreshTokens { get; }
     DbSet<Oferta> Ofertas { get; }
     DbSet<OfertaFoto> OfertaFotos { get; }
     DbSet<OfertaTag> OfertaTags { get; }

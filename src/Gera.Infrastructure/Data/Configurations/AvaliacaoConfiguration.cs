@@ -28,7 +28,7 @@ public class AvaliacaoConfiguration : IEntityTypeConfiguration<Avaliacao>
         builder.HasOne(a => a.Solicitacao)
             .WithMany(s => s.Avaliacoes)
             .HasForeignKey(a => a.SolicitacaoId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasOne(a => a.Avaliador)
             .WithMany(u => u.AvaliacoesFeitas)

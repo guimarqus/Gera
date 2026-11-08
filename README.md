@@ -1,59 +1,65 @@
-# Gera — Marketplace de Serviços Gerais
+# Gera
 
-O **Gera** conecta quem precisa de serviços gerais a profissionais próximos (pedreiro, eletricista, encanador, pintor, diarista, fretes, jardinagem, reparos).
+Marketplace de serviços gerais. A solução usa .NET 10, ASP.NET Core Identity, SQL Server, React e Vite.
 
----
+## Pré-requisitos
 
-## 🏗️ Estrutura do Projeto
+- .NET 10 SDK
+- SQL Server (LocalDB ou instância compatível com SQL Server e NetTopologySuite)
+- Node.js 20.19+ ou 22.12+ e npm
 
+## Configuração local (User Secrets)
+
+Na raiz do repositório:
+
+```powershell
+dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Server=(localdb)\MSSQLLocalDB;Database=GeraDb;Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True" --project src/Gera.Api/Gera.Api.csproj
+$rng = [System.Security.Cryptography.RandomNumberGenerator]::Create()
+$bytes = New-Object byte[] 48
+$rng.GetBytes($bytes)
+$jwtSecret = [Convert]::ToBase64String($bytes)
+dotnet user-secrets set "JwtSettings:Secret" $jwtSecret --project src/Gera.Api/Gera.Api.csproj
+dotnet user-secrets set "Frontend:Origin" "http://localhost:5173" --project src/Gera.Api/Gera.Api.csproj
 ```
-Gera.sln
-├── src/
-│   ├── Gera.Api              → Controllers RESTful, Middlewares (ProblemDetails), Swagger, Program.cs
-│   ├── Gera.Application      → Contratos, DTOs, Validadores FluentValidation, IAppDbContext
-│   ├── Gera.Domain           → Entidades, Enums, Exceptions (sem acoplamento)
-│   └── Gera.Infrastructure   → AppDbContext, Mapeamentos EF Core, Migrations, Identity, NetTopologySuite
-├── tests/
-│   ├── Gera.UnitTests        → Testes unitários de regras de domínio (xUnit + FluentAssertions)
-│   └── Gera.IntegrationTests → Testes de integração de API (WebApplicationFactory)
-├── web/                      → Aplicação Web SPA React
-└── docs/                     → Documentação e registro de decisões de arquitetura (DECISOES.md)
+
+`appsettings.json` não contém connection string ou segredo JWT. Em produção, injete esses valores por um cofre de segredos ou variáveis de ambiente.
+
+## Banco de dados
+
+Aplicar todas as migrations (incluindo `InitialCreate` e `AddRefreshTokens`):
+
+```powershell
+dotnet ef database update --project src/Gera.Infrastructure/Gera.Infrastructure.csproj --startup-project src/Gera.Api/Gera.Api.csproj --context AppDbContext
 ```
 
----
+Para conferir tabelas, índice espacial e seed, conecte ao banco `GeraDb`; a tabela `__EFMigrationsHistory` registra as migrations aplicadas. As categorias iniciais são configuradas em `CategoriaConfiguration`.
 
-## 🚀 Como Executar
+## Executar API e web
 
-### Pré-requisitos
-- .NET 10 SDK (ou .NET 11)
-- SQL Server (LocalDB ou instância dedicada)
-- Node.js e npm
+```powershell
+dotnet restore Gera.sln
+dotnet build Gera.sln
+dotnet run --project src/Gera.Api/Gera.Api.csproj --launch-profile http
+```
 
-### Backend (.NET API)
+A API HTTP local usa `http://localhost:5215`; Swagger fica em `/swagger` e health check em `/api/health`.
 
-1. Restaurar os pacotes da solution:
-   ```powershell
-   dotnet restore Gera.sln
-   ```
+Em outro terminal:
 
-2. Compilar os projetos:
-   ```powershell
-   dotnet build Gera.sln
-   ```
+```powershell
+cd web
+npm install
+npm run dev
+```
 
-3. Executar os testes automatizados (unitários e de integração):
-   ```powershell
-   dotnet test Gera.sln
-   ```
+Abra `http://localhost:5173`. O servidor Vite encaminha `/api` para a API local. CORS está configurado para `localhost:5173` e `127.0.0.1:5173` quando a API é chamada diretamente.
 
-4. Executar a API:
-   ```powershell
-   dotnet run --project src/Gera.Api/Gera.Api.csproj
-   ```
-   Acesse a documentação interativa do Swagger em: `https://localhost:7080/swagger` ou `http://localhost:5080/swagger`.
-   Health check: `GET /api/health`
+## Verificação
 
----
+```powershell
+dotnet test Gera.sln
+cd web
+npm run build
+```
 
-## 📚 Documentação
-- [Registro de Decisões de Arquitetura](docs/DECISOES.md)
+Os detalhes dos endpoints estão em [docs/API.md](docs/API.md); as políticas em [docs/REGRAS-DE-NEGOCIO.md](docs/REGRAS-DE-NEGOCIO.md); a decisão de armazenamento de tokens em [docs/DECISOES.md](docs/DECISOES.md).

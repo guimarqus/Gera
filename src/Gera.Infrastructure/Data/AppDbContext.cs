@@ -27,6 +27,7 @@ public class AppDbContext : IdentityDbContext<Usuario, IdentityRole<int>, int>, 
     public DbSet<Denuncia> Denuncias => Set<Denuncia>();
     public DbSet<Bloqueio> Bloqueios => Set<Bloqueio>();
     public DbSet<Pagamento> Pagamentos => Set<Pagamento>();
+    public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

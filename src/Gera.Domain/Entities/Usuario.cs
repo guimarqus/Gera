@@ -14,9 +14,11 @@ public class Usuario : IdentityUser<int>
     public int RaioAtendimentoPadraoKm { get; set; } = 15;
     public bool NotificacoesAtivas { get; set; } = true;
     public string PapelAtivo { get; set; } = "Cliente";
-    public string? RefreshToken { get; set; }
-    public DateTime? RefreshTokenExpiracao { get; set; }
     public bool Ativo { get; set; } = true;
+    public bool AceitouTermos { get; set; }
+    public DateTime? TermosAceitosEm { get; set; }
+    public bool AceitouPrivacidade { get; set; }
+    public DateTime? PrivacidadeAceitaEm { get; set; }
     public DateTime CriadoEm { get; set; } = DateTime.UtcNow;
     public DateTime AtualizadoEm { get; set; } = DateTime.UtcNow;
 

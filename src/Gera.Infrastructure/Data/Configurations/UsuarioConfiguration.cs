@@ -28,9 +28,6 @@ public class UsuarioConfiguration : IEntityTypeConfiguration<Usuario>
             .HasMaxLength(20)
             .HasDefaultValue("Cliente");
 
-        builder.Property(u => u.RefreshToken)
-            .HasMaxLength(200);
-
         builder.Property(u => u.CriadoEm)
             .HasDefaultValueSql("GETUTCDATE()");
 
