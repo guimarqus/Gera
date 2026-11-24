@@ -957,6 +957,9 @@ namespace Gera.Infrastructure.Data.Migrations
                         .HasColumnType("datetime2")
                         .HasDefaultValueSql("GETUTCDATE()");
 
+                    b.Property<bool>("EhCapa")
+                        .HasColumnType("bit");
+
                     b.Property<int>("OfertaId")
                         .HasColumnType("int");
 
@@ -965,6 +968,10 @@ namespace Gera.Infrastructure.Data.Migrations
 
                     b.Property<string>("Url")
                         .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("UrlMiniatura")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 

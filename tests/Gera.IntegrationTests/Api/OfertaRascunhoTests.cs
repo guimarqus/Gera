@@ -37,9 +37,23 @@ public sealed class OfertaRascunhoTests
         await using (var scope = factory.Services.CreateAsyncScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            db.OfertaFotos.Add(new OfertaFoto { OfertaId = rascunho.Id, Url = "/foto-de-teste.webp", Ordem = 1 });
+            db.OfertaFotos.AddRange(
+                new OfertaFoto { OfertaId = rascunho.Id, Url = "/foto-de-teste.webp", Ordem = 1, EhCapa = true },
+                new OfertaFoto { OfertaId = rascunho.Id, Url = "/segunda-foto.webp", Ordem = 2 });
             await db.SaveChangesAsync();
         }
+
+        (await visitante.GetAsync($"{url}/fotos")).StatusCode.Should().Be(HttpStatusCode.NotFound);
+        var fotos = (await proprietario.GetFromJsonAsync<FotosOfertaDto>($"{url}/fotos"))!;
+        var fotoIds = fotos.Fotos.Reverse().Select(foto => foto.Id).ToArray();
+        using var ordem = await proprietario.PatchAsJsonAsync($"{url}/fotos/ordem", new OrdenarFotosRequest(fotoIds, fotos.Versao));
+        ordem.EnsureSuccessStatusCode();
+        var fotosOrdenadas = (await ordem.Content.ReadFromJsonAsync<FotosOfertaDto>())!;
+        fotosOrdenadas.Fotos.Select(foto => foto.Id).Should().Equal(fotoIds);
+        using var capa = await proprietario.PatchAsJsonAsync($"{url}/fotos/{fotoIds[0]}/capa", new AlterarFotoRequest(fotosOrdenadas.Versao));
+        capa.EnsureSuccessStatusCode();
+        var fotosComCapa = (await capa.Content.ReadFromJsonAsync<FotosOfertaDto>())!;
+        fotosComCapa.Fotos.Should().ContainSingle(foto => foto.EhCapa && foto.Id == fotoIds[0]);
 
         using var publicacao = await proprietario.PostAsync($"{url}/publicar", null);
         publicacao.EnsureSuccessStatusCode();

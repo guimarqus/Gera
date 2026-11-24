@@ -95,3 +95,5 @@ O limite padrão para cada endereço IP é de 10 requisições por minuto nos en
 - `POST /api/ofertas/{id}/publicar` publica um rascunho completo e concede o papel Prestador na mesma transação. Chamadas repetidas para uma oferta ativa retornam seu estado atual.
 - `PATCH /api/ofertas/{id}/status` aceita `{"status":3}` para pausar e `{"status":2}` para reativar. O limite de ofertas ativas por usuário é configurável em `Ofertas:LimiteAtivasPorUsuario` com padrão 20.
 - A publicação exige categoria ativa, título com 5 a 120 caracteres, descrição com 30 a 2.000 caracteres, pelo menos uma foto, localização, raio de 1 a 100 km, disponibilidade e preço compatível com a modalidade.
+- `GET /api/ofertas/{id}/fotos` lista as fotos para o proprietário. `PATCH .../fotos/ordem` recebe `fotoIds` com todas as fotos, e `PATCH .../fotos/{fotoId}/capa` define a capa. Ambos recebem `versao` no corpo.
+- `DELETE .../fotos/{fotoId}` recebe a versão em `If-Match` e remove a foto do anúncio. A remoção da última foto de uma oferta ativa é bloqueada. As operações retornam a lista atualizada e a nova versão da oferta.

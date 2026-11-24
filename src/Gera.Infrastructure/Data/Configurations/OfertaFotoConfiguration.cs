@@ -16,6 +16,8 @@ public class OfertaFotoConfiguration : IEntityTypeConfiguration<OfertaFoto>
             .IsRequired()
             .HasMaxLength(500);
 
+        builder.Property(f => f.UrlMiniatura).HasMaxLength(500);
+
         builder.Property(f => f.CriadoEm)
             .HasDefaultValueSql("GETUTCDATE()");
 
