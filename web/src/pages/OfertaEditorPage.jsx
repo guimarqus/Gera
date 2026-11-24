@@ -21,6 +21,7 @@ function Editor({ oferta, categorias, token }) {
   const [etapa, setEtapa] = useState(0);
   const [erroLocalizacao, setErroLocalizacao] = useState('');
   const [buscandoLocalizacao, setBuscandoLocalizacao] = useState(false);
+  const [progressoFotos, setProgressoFotos] = useState(null);
   const tituloEtapa = useRef(null);
   const alterado = dados !== salvos;
   const coordenadasCompletas = preenchido(dados.latitude) === preenchido(dados.longitude);
@@ -57,20 +58,42 @@ function Editor({ oferta, categorias, token }) {
     },
   });
   const { mutate, isPending, isError } = mutation;
+
+  function aplicarFotos(resultado) {
+    const atualizado = { ...dados, versao: resultado.versao };
+    setDados(atualizado);
+    setSalvos(atualizado);
+    queryClient.setQueryData(['oferta-edicao', token, String(oferta.id)], atual => ({ ...atual, versao: resultado.versao }));
+    queryClient.setQueryData(chaveFotos, resultado);
+  }
+
   const acaoOferta = useMutation({
-    mutationFn: ({ tipo, fotoIds, fotoId }) => {
+    mutationFn: async ({ tipo, fotoIds, fotoId, arquivos }) => {
       if (tipo === 'publicar') return api.publicarOferta(oferta.id);
+      if (tipo === 'upload') {
+        let versao = dados.versao;
+        setProgressoFotos({ enviadas: 0, total: arquivos.length });
+        for (const [indice, arquivo] of arquivos.entries()) {
+          const resultado = await api.adicionarFotoOferta(oferta.id, arquivo, versao);
+          versao = resultado.versao;
+          aplicarFotos(resultado);
+          setProgressoFotos({ enviadas: indice + 1, total: arquivos.length });
+        }
+        return null;
+      }
       if (tipo === 'ordem') return api.ordenarFotosOferta(oferta.id, fotoIds, dados.versao);
       if (tipo === 'capa') return api.capaOferta(oferta.id, fotoId, dados.versao);
       return api.excluirFotoOferta(oferta.id, fotoId, dados.versao);
     },
     onSuccess: (resultado, { tipo }) => {
-      const atualizado = tipo === 'publicar' ? paraEdicao(resultado) : { ...dados, versao: resultado.versao };
-      setDados(atualizado);
-      setSalvos(atualizado);
-      queryClient.setQueryData(['oferta-edicao', token, String(oferta.id)], atual =>
-        tipo === 'publicar' ? resultado : { ...atual, versao: resultado.versao });
-      if (tipo !== 'publicar') queryClient.setQueryData(chaveFotos, resultado);
+      if (tipo === 'publicar') {
+        const atualizado = paraEdicao(resultado);
+        setDados(atualizado);
+        setSalvos(atualizado);
+        queryClient.setQueryData(['oferta-edicao', token, String(oferta.id)], resultado);
+      } else if (tipo !== 'upload') {
+        aplicarFotos(resultado);
+      }
       queryClient.invalidateQueries({ queryKey: ['minhas-ofertas', token] });
     },
   });
@@ -199,7 +222,7 @@ function Editor({ oferta, categorias, token }) {
         </div>
       </fieldset>
       {etapa === 3 && <FotosOferta consulta={fotos} bloqueado={ocupado || alterado || buscandoLocalizacao}
-        alterar={acaoOferta.mutate} />}
+        alterar={acaoOferta.mutate} progresso={progressoFotos} />}
       <fieldset hidden={etapa !== 4}>
         <legend>Preço</legend>
         <Field label="Tipo de cobrança">{attrs => <select {...attrs} className="ds-input" value={dados.tipoPreco ?? ''}

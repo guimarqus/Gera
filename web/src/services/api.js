@@ -21,7 +21,9 @@ async function request(path, options = {}, retry = true) {
   if (response.status === 401 && retry && path !== '/auth/refresh' && path !== '/auth/login') {
     try { await refreshOnce(); return request(path, options, false); } catch {}
   }
-  const data = response.status === 204 ? null : await response.json().catch(() => null);
+  const data = response.ok && options.resposta === 'blob'
+    ? await response.blob()
+    : response.status === 204 ? null : await response.json().catch(() => null);
   if (!response.ok) {
     const message = data?.mensagem || data?.detail || (data?.errors && Object.values(data.errors).flat().join(' ')) || data?.title || data?.erros?.map(e => e.mensagem).join(' ') || (response.status === 401 ? 'Usuário ou senha incorretos.' : 'Confira os campos e tente novamente.');
     throw new ApiError(message, response.status, data);
@@ -43,6 +45,13 @@ export const api = {
   criarOferta: () => request('/ofertas', { method: 'POST' }),
   editarOferta: (id, dados) => request(`/ofertas/${id}`, { method: 'PUT', body: json(dados) }),
   fotosOferta: id => request(`/ofertas/${id}/fotos`),
+  imagemOferta: (url, signal) => request(url.slice('/api'.length), { resposta: 'blob', signal }),
+  adicionarFotoOferta: (id, arquivo, versao) => {
+    const body = new FormData();
+    body.append('arquivo', arquivo);
+    body.append('versao', versao);
+    return request(`/ofertas/${id}/fotos`, { method: 'POST', body });
+  },
   ordenarFotosOferta: (id, fotoIds, versao) => request(`/ofertas/${id}/fotos/ordem`, { method: 'PATCH', body: json({ fotoIds, versao }) }),
   capaOferta: (id, fotoId, versao) => request(`/ofertas/${id}/fotos/${fotoId}/capa`, { method: 'PATCH', body: json({ versao }) }),
   excluirFotoOferta: (id, fotoId, versao) => request(`/ofertas/${id}/fotos/${fotoId}`, { method: 'DELETE', headers: { 'If-Match': `"${versao}"` } }),

@@ -11,7 +11,7 @@ import { api } from '../services/api.js';
 vi.mock('../services/api.js', () => ({
   api: {
     minhasOfertas: vi.fn(), criarOferta: vi.fn(), oferta: vi.fn(), categories: vi.fn(),
-    modeloOferta: vi.fn(), editarOferta: vi.fn(), fotosOferta: vi.fn(), publicarOferta: vi.fn(),
+    modeloOferta: vi.fn(), editarOferta: vi.fn(), fotosOferta: vi.fn(), publicarOferta: vi.fn(), adicionarFotoOferta: vi.fn(),
   },
 }));
 
@@ -114,4 +114,32 @@ it('publica pela revisão quando os dados estão salvos e existe uma foto', asyn
   fireEvent.click(screen.getByRole('button', { name: 'Publicar oferta' }));
   expect(await screen.findByText('Oferta publicada.')).toBeInTheDocument();
   expect(api.publicarOferta).toHaveBeenCalledWith(42);
+});
+
+it('envia duas fotos em sequência usando a versão atualizada da oferta', async () => {
+  api.oferta.mockResolvedValue({ id: 42, status: 1, versao: 'versao-1' });
+  api.categories.mockResolvedValue([]);
+  api.fotosOferta.mockResolvedValue({ versao: 'versao-1', fotos: [] });
+  const primeira = new File(['primeira'], 'primeira.png', { type: 'image/png' });
+  const segunda = new File(['segunda'], 'segunda.jpg', { type: 'image/jpeg' });
+  const foto1 = { id: 1, url: '/primeira.webp', ehCapa: true };
+  const foto2 = { id: 2, url: '/segunda.webp', ehCapa: false };
+  api.adicionarFotoOferta.mockResolvedValueOnce({ versao: 'versao-2', fotos: [foto1] })
+    .mockResolvedValueOnce({ versao: 'versao-3', fotos: [foto1, foto2] });
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+
+  render(<AuthContext.Provider value={{ token: 'sessao-teste' }}>
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter initialEntries={['/trabalhador/ofertas/42']}>
+        <Routes><Route path="/trabalhador/ofertas/:id" element={<OfertaEditorPage />} /></Routes>
+      </MemoryRouter>
+    </QueryClientProvider>
+  </AuthContext.Provider>);
+
+  await screen.findByRole('heading', { name: 'Dados do serviço' });
+  for (let i = 0; i < 3; i++) fireEvent.click(screen.getByRole('button', { name: 'Continuar' }));
+  fireEvent.change(await screen.findByLabelText('Adicionar fotos'), { target: { files: [primeira, segunda] } });
+  expect(await screen.findByText('Fotos enviadas: 2 de 2')).toBeInTheDocument();
+  expect(api.adicionarFotoOferta).toHaveBeenNthCalledWith(1, 42, primeira, 'versao-1');
+  expect(api.adicionarFotoOferta).toHaveBeenNthCalledWith(2, 42, segunda, 'versao-2');
 });
