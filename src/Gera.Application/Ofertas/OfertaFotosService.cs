@@ -11,8 +11,58 @@ public sealed record FotosOfertaDto(string Versao, IReadOnlyList<FotoOfertaDto> 
 public sealed record OrdenarFotosRequest(int[] FotoIds, string Versao);
 public sealed record AlterarFotoRequest(string Versao);
 
-public sealed class OfertaFotosService(IAppDbContext db)
+public sealed class OfertaFotosService(IAppDbContext db, IArmazenamentoMidia midia)
 {
+    public const int MaximoFotos = 10;
+    public const int MaximoBytes = 5 * 1024 * 1024;
+
+    public async Task<FotosOfertaDto> AdicionarAsync(
+        int id, int usuarioId, string versao, Stream arquivo, long tamanho, CancellationToken ct)
+    {
+        if (tamanho is <= 0 or > MaximoBytes)
+            throw new DomainException("Envie uma imagem de até 5 MB.");
+
+        var oferta = await BuscarAsync(id, usuarioId, ct);
+        ValidarEdicao(oferta, versao);
+        if (oferta.Fotos.Count >= MaximoFotos)
+            throw new DomainException("Cada oferta pode ter até dez fotos.");
+
+        var arquivoSalvo = await midia.SalvarFotoAsync(id, arquivo, ct);
+        var foto = new OfertaFoto
+        {
+            OfertaId = id,
+            Url = arquivoSalvo.Url,
+            UrlMiniatura = arquivoSalvo.UrlMiniatura,
+            Ordem = oferta.Fotos.Select(f => f.Ordem).DefaultIfEmpty(0).Max() + 1,
+            EhCapa = !oferta.Fotos.Any(f => f.EhCapa)
+        };
+
+        oferta.Fotos.Add(foto);
+        try
+        {
+            return await SalvarAsync(oferta, ct);
+        }
+        catch
+        {
+            midia.RemoverFoto(id, arquivoSalvo.Url);
+            midia.RemoverFoto(id, arquivoSalvo.UrlMiniatura);
+            throw;
+        }
+    }
+
+    public async Task<Stream> AbrirAsync(int id, string nome, int? usuarioId, CancellationToken ct)
+    {
+        var url = $"/api/ofertas/{id}/midia/{nome}";
+        var visivel = await db.OfertaFotos.AsNoTracking().AnyAsync(
+            f => f.OfertaId == id && (f.Url == url || f.UrlMiniatura == url) &&
+                f.Oferta.ExcluidoEm == null &&
+                (f.Oferta.Status == StatusOferta.Ativo || f.Oferta.PrestadorId == usuarioId), ct);
+
+        if (visivel && midia.AbrirFoto(id, nome) is { } arquivo)
+            return arquivo;
+        throw new NotFoundException("Foto não encontrada.");
+    }
+
     public async Task<FotosOfertaDto> ListarAsync(int id, int usuarioId, CancellationToken ct)
     {
         var oferta = await BuscarAsync(id, usuarioId, ct, leitura: true);
@@ -60,7 +110,10 @@ public sealed class OfertaFotosService(IAppDbContext db)
         if (restantes.Length > 0 && !restantes.Any(item => item.EhCapa))
             restantes[0].EhCapa = true;
 
-        return await SalvarAsync(oferta, ct);
+        var resposta = await SalvarAsync(oferta, ct);
+        midia.RemoverFoto(id, foto.Url);
+        midia.RemoverFoto(id, foto.UrlMiniatura);
+        return resposta;
     }
 
     private async Task<Oferta> BuscarAsync(int id, int usuarioId, CancellationToken ct, bool leitura = false)

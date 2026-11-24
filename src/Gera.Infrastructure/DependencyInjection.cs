@@ -6,6 +6,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Gera.Application.Auth;
+using Gera.Application.Ofertas;
+using Gera.Infrastructure.Services;
 using Microsoft.Extensions.Logging;
 
 namespace Gera.Infrastructure;
@@ -23,6 +25,7 @@ public static class DependencyInjection
         });
 
         services.AddScoped<IAppDbContext>(provider => provider.GetRequiredService<AppDbContext>());
+        services.AddSingleton<IArmazenamentoMidia, ArmazenamentoLocalMidia>();
 
         services.AddDataProtection();
 

@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Gera.Application.Ofertas;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Gera.Api.Controllers;
 
@@ -11,6 +12,28 @@ namespace Gera.Api.Controllers;
 public sealed class OfertaFotosController(OfertaFotosService fotos) : ControllerBase
 {
     private int? UsuarioId => int.TryParse(User.FindFirstValue("sub"), out var id) ? id : null;
+
+    [HttpPost]
+    [Consumes("multipart/form-data")]
+    [RequestSizeLimit(OfertaFotosService.MaximoBytes + 64 * 1024)]
+    [RequestFormLimits(MultipartBodyLengthLimit = OfertaFotosService.MaximoBytes)]
+    [EnableRateLimiting("fotos-ofertas")]
+    public async Task<ActionResult<FotosOfertaDto>> Adicionar(int id, IFormFile arquivo, [FromForm] string versao, CancellationToken ct)
+    {
+        if (UsuarioId is not int usuarioId) return Unauthorized();
+        await using var conteudo = arquivo.OpenReadStream();
+        return Ok(await fotos.AdicionarAsync(id, usuarioId, versao, conteudo, arquivo.Length, ct));
+    }
+
+    [AllowAnonymous]
+    [HttpGet("/api/ofertas/{id:int}/midia/{nome}")]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+    public async Task<IActionResult> Abrir(int id, string nome, CancellationToken ct)
+    {
+        var arquivo = await fotos.AbrirAsync(id, nome, UsuarioId, ct);
+        Response.Headers["X-Content-Type-Options"] = "nosniff";
+        return File(arquivo, "image/webp");
+    }
 
     [HttpGet]
     public async Task<ActionResult<FotosOfertaDto>> Listar(int id, CancellationToken ct)

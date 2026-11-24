@@ -5,10 +5,9 @@ using FluentAssertions;
 using Gera.Application.Auth;
 using Gera.Application.Ofertas;
 using Gera.Domain.Enums;
-using Gera.Domain.Entities;
 using Gera.Application.Catalog;
-using Gera.Infrastructure.Data;
 using Microsoft.Extensions.DependencyInjection;
+using SkiaSharp;
 
 namespace Gera.IntegrationTests.Api;
 
@@ -34,17 +33,16 @@ public sealed class OfertaRascunhoTests
         (await visitante.PostAsync($"{url}/publicar", null)).StatusCode.Should().Be(HttpStatusCode.NotFound);
         (await proprietario.PostAsync($"{url}/publicar", null)).StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
-        await using (var scope = factory.Services.CreateAsyncScope())
-        {
-            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            db.OfertaFotos.AddRange(
-                new OfertaFoto { OfertaId = rascunho.Id, Url = "/foto-de-teste.webp", Ordem = 1, EhCapa = true },
-                new OfertaFoto { OfertaId = rascunho.Id, Url = "/segunda-foto.webp", Ordem = 2 });
-            await db.SaveChangesAsync();
-        }
-
         (await visitante.GetAsync($"{url}/fotos")).StatusCode.Should().Be(HttpStatusCode.NotFound);
-        var fotos = (await proprietario.GetFromJsonAsync<FotosOfertaDto>($"{url}/fotos"))!;
+        var vazias = (await proprietario.GetFromJsonAsync<FotosOfertaDto>($"{url}/fotos"))!;
+        using var limpeza = new LimpezaFotos(factory.Services.GetRequiredService<IArmazenamentoMidia>(), rascunho.Id);
+        var primeira = await EnviarFotoAsync(proprietario, url, vazias.Versao);
+        limpeza.Adicionar(primeira);
+        var fotos = await EnviarFotoAsync(proprietario, url, primeira.Versao);
+        limpeza.Adicionar(fotos);
+        var urlArquivo = fotos.Fotos[0].Url;
+        (await visitante.GetAsync(urlArquivo)).StatusCode.Should().Be(HttpStatusCode.NotFound);
+        (await proprietario.GetAsync(urlArquivo)).StatusCode.Should().Be(HttpStatusCode.OK);
         var fotoIds = fotos.Fotos.Reverse().Select(foto => foto.Id).ToArray();
         using var ordem = await proprietario.PatchAsJsonAsync($"{url}/fotos/ordem", new OrdenarFotosRequest(fotoIds, fotos.Versao));
         ordem.EnsureSuccessStatusCode();
@@ -66,6 +64,7 @@ public sealed class OfertaRascunhoTests
         perfil!.Papeis.Should().Contain("Prestador");
         var respostaPublica = await visitante.GetStringAsync(url);
         respostaPublica.Should().NotContain("latitude").And.NotContain("longitude");
+        (await visitante.GetAsync(urlArquivo)).StatusCode.Should().Be(HttpStatusCode.OK);
 
         var pausa = await proprietario.PatchAsJsonAsync($"{url}/status", new AlterarStatusOfertaRequest(StatusOferta.Pausado));
         pausa.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -116,5 +115,42 @@ public sealed class OfertaRascunhoTests
         resposta.EnsureSuccessStatusCode();
         var sessao = (await resposta.Content.ReadFromJsonAsync<PublicAuthResponse>())!;
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", sessao.AccessToken);
+    }
+
+    private static async Task<FotosOfertaDto> EnviarFotoAsync(HttpClient client, string url, string versao)
+    {
+        using var bitmap = new SKBitmap(16, 16);
+        bitmap.Erase(SKColors.Teal);
+        using var imagem = SKImage.FromBitmap(bitmap);
+        using var png = imagem.Encode(SKEncodedImageFormat.Png, 100);
+        using var form = new MultipartFormDataContent
+        {
+            { new ByteArrayContent(png.ToArray()), "arquivo", "teste.png" },
+            { new StringContent(versao), "versao" }
+        };
+        using var resposta = await client.PostAsync($"{url}/fotos", form);
+        resposta.EnsureSuccessStatusCode();
+        return (await resposta.Content.ReadFromJsonAsync<FotosOfertaDto>())!;
+    }
+
+    private sealed class LimpezaFotos(IArmazenamentoMidia midia, int ofertaId) : IDisposable
+    {
+        private readonly HashSet<string> _urls = [];
+
+        public void Adicionar(FotosOfertaDto fotos)
+        {
+            foreach (var foto in fotos.Fotos)
+            {
+                _urls.Add(foto.Url);
+                if (foto.UrlMiniatura is not null)
+                    _urls.Add(foto.UrlMiniatura);
+            }
+        }
+
+        public void Dispose()
+        {
+            foreach (var url in _urls)
+                midia.RemoverFoto(ofertaId, url);
+        }
     }
 }
