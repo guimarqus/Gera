@@ -133,7 +133,23 @@ internal sealed class TestApi : WebApplicationFactory<Program>
     private readonly string _database = $"GeraAuthTest_{Guid.NewGuid():N}";
     private readonly int _graceSeconds;
     private bool _databaseMigrated;
-    private string ConnectionString => $"Server=(localdb)\\MSSQLLocalDB;Database={_database};Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True";
+    private string ConnectionString
+    {
+        get
+        {
+            var configured = Environment.GetEnvironmentVariable("GeraTest__SqlServer");
+            var connection = new Microsoft.Data.SqlClient.SqlConnectionStringBuilder(
+                string.IsNullOrWhiteSpace(configured)
+                    ? @"Server=(localdb)\MSSQLLocalDB;Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True"
+                    : configured)
+            {
+                InitialCatalog = _database,
+                AttachDBFilename = string.Empty
+            };
+
+            return connection.ConnectionString;
+        }
+    }
 
     public TestApi(int graceSeconds = 10) => _graceSeconds = graceSeconds;
 

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 using NetTopologySuite.Geometries;
 
@@ -767,10 +767,7 @@ namespace Gera.Infrastructure.Data.Migrations
                 table: "Ofertas",
                 column: "PrestadorId");
 
-            migrationBuilder.CreateIndex(
-                name: "SPATIAL_IX_Ofertas_Localizacao",
-                table: "Ofertas",
-                column: "Localizacao");
+            migrationBuilder.Sql("CREATE SPATIAL INDEX [SPATIAL_IX_Ofertas_Localizacao] ON [dbo].[Ofertas] ([Localizacao]) USING GEOGRAPHY_AUTO_GRID;");
 
             migrationBuilder.CreateIndex(
                 name: "IX_OfertaTags_OfertaId",

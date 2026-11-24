@@ -98,3 +98,15 @@ Essa escolha evita persistir o JWT em `localStorage` e impede que scripts do nav
 O cliente React compartilha uma unica promessa de refresh por vez. A API aceita por 10 segundos, configuraveis em `Auth:RefreshReuseGraceSeconds`, a reapresentacao de um refresh token que acabou de ser rotacionado e devolve a mesma rotacao guardada somente em memoria. Fora dessa janela, considera reutilizacao como roubo e revoga a cadeia do usuario. Tokens persistidos no banco continuam sendo apenas hashes.
 
 O sender de desenvolvimento apenas registra o link de recuperacao no log. **O envio real de e-mail continua pendente e deve ser implementado antes da producao.**
+
+## ADR 007 - Validacao do esquema espacial em SQL Server
+
+**Status:** implementado para bancos novos, com validacao em SQL Server pendente.
+
+A migration `20261107211323_InitialCreate` gera `CREATE INDEX` sobre a coluna `Ofertas.Localizacao`, do tipo `geography`. O nome `SPATIAL_IX_Ofertas_Localizacao` sozinho nao cria um indice espacial.
+
+O caminho de instalacao limpa usa `CREATE SPATIAL INDEX` na migration inicial. A escolha entre corrigir a migration inicial e adicionar uma migration de correcao depende do historico dos bancos existentes. Uma correcao apenas posterior deixa de atender a uma instalacao limpa se o SQL Server rejeitar a instrucao inicial antes de alcancar a nova migration.
+
+Validar em SQL Server isolado a instalacao desde a primeira migration, o caminho de atualizacao quando aplicavel, a presenca do indice em `sys.spatial_indexes` e a persistencia de um ponto com SRID 4326.
+
+A validacao esta bloqueada nesta sessao. O LocalDB 17.0 falha ao acessar a configuracao da instancia no registro do Windows, inclusive ao criar uma instancia de teste separada. O historico de migrations permanece desconhecido. Para rodar a suite contra outra instancia de teste, defina `GeraTest__SqlServer` com a conexao dessa instancia. O fixture cria um banco isolado com nome gerado.
