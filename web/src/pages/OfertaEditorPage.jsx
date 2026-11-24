@@ -8,23 +8,32 @@ import './ofertas.css';
 
 const tiposPreco = ['Por hora', 'Por diária', 'Por metro quadrado', 'Por empreitada', 'A combinar'];
 const camposNumericos = ['categoriaId', 'tipoPreco', 'valor', 'latitude', 'longitude', 'raioKm'];
-const etapas = ['Dados do serviço', 'Área de atendimento', 'Preço', 'Disponibilidade', 'Revisão'];
+const etapas = ['Dados do serviço', 'Características', 'Área de atendimento', 'Preço', 'Disponibilidade', 'Revisão'];
 const intervaloAutosave = 800;
 const preenchido = valor => valor != null && valor !== '';
+const paraEdicao = oferta => ({ ...oferta, tagsTexto: (oferta.tags ?? []).join(', ') });
 
 function Editor({ oferta, categorias, token }) {
   const queryClient = useQueryClient();
-  const [dados, setDados] = useState(oferta);
-  const [salvos, setSalvos] = useState(oferta);
+  const [dados, setDados] = useState(() => paraEdicao(oferta));
+  const [salvos, setSalvos] = useState(dados);
   const [etapa, setEtapa] = useState(0);
   const [erroLocalizacao, setErroLocalizacao] = useState('');
   const [buscandoLocalizacao, setBuscandoLocalizacao] = useState(false);
   const tituloEtapa = useRef(null);
   const alterado = dados !== salvos;
   const coordenadasCompletas = preenchido(dados.latitude) === preenchido(dados.longitude);
+  const modelo = useQuery({
+    queryKey: ['modelo-oferta', dados.categoriaId],
+    queryFn: () => api.modeloOferta(dados.categoriaId),
+    enabled: etapa === 1 && preenchido(dados.categoriaId),
+  });
   const mutation = useMutation({
     mutationFn: versaoEnviada => {
-      const payload = { ...versaoEnviada };
+      const { tagsTexto, caracteristicas, ...payload } = versaoEnviada;
+      payload.tags = tagsTexto.split(',').map(tag => tag.trim()).filter(Boolean);
+      payload.atributos = caracteristicas?.atributos ?? {};
+      payload.versaoModelo = caracteristicas?.versaoModelo ?? null;
       for (const campo of camposNumericos) {
         const valor = versaoEnviada[campo];
         payload[campo] = preenchido(valor) ? Number(valor) : null;
@@ -32,8 +41,10 @@ function Editor({ oferta, categorias, token }) {
       return api.editarOferta(oferta.id, payload);
     },
     onSuccess: (salvo, enviado) => {
-      setDados(atual => atual === enviado ? salvo : { ...atual, versao: salvo.versao });
-      setSalvos(salvo);
+      // Mantém vírgulas e espaços que o usuário ainda está digitando.
+      const confirmado = { ...enviado, versao: salvo.versao };
+      setDados(atual => atual === enviado ? confirmado : { ...atual, versao: salvo.versao });
+      setSalvos(confirmado);
       queryClient.setQueryData(['oferta-edicao', token, String(oferta.id)], salvo);
       queryClient.invalidateQueries({ queryKey: ['minhas-ofertas', token] });
     },
@@ -55,7 +66,22 @@ function Editor({ oferta, categorias, token }) {
 
   function alterar(campo, valor) {
     if (mutation.isError && mutation.error.status !== 409) mutation.reset();
-    setDados(atual => ({ ...atual, [campo]: valor, ...(campo === 'tipoPreco' && valor === '5' && { valor: '' }) }));
+    setDados(atual => ({
+      ...atual, [campo]: valor,
+      ...(campo === 'tipoPreco' && valor === '5' && { valor: '' }),
+      ...(campo === 'categoriaId' && Number(atual.categoriaId) !== Number(valor) && { caracteristicas: null }),
+    }));
+  }
+
+  function alterarCaracteristica(chave, valor) {
+    if (mutation.isError && mutation.error.status !== 409) mutation.reset();
+    setDados(atual => ({
+      ...atual,
+      caracteristicas: {
+        versaoModelo: modelo.data.versao,
+        atributos: { ...atual.caracteristicas?.atributos, [chave]: valor },
+      },
+    }));
   }
 
   function irPara(indice) {
@@ -107,6 +133,25 @@ function Editor({ oferta, categorias, token }) {
           onChange={event => alterar('descricao', event.target.value)} />}</Field>
       </fieldset>
       <fieldset hidden={etapa !== 1}>
+        <legend>Características</legend>
+        {!preenchido(dados.categoriaId) && <p>Selecione uma categoria para ver as características do serviço.</p>}
+        {modelo.isFetching && <Skeleton lines={3} />}
+        {modelo.isError && <ErrorState title="Não foi possível carregar as características" onRetry={modelo.refetch} />}
+        {modelo.data?.campos.map(campo => campo.tipo === 'texto'
+          ? <Input key={campo.chave} label={campo.rotulo} maxLength={160}
+            value={dados.caracteristicas?.atributos[campo.chave] ?? ''}
+            onChange={event => alterarCaracteristica(campo.chave, event.target.value)} />
+          : <Field key={campo.chave} label={campo.rotulo}>{attrs => <select {...attrs} className="ds-input"
+            value={dados.caracteristicas?.atributos[campo.chave] ?? ''}
+            onChange={event => alterarCaracteristica(campo.chave, event.target.value)}>
+            <option value="">Selecione</option>
+            {campo.tipo === 'booleano'
+              ? <><option value="true">Sim</option><option value="false">Não</option></>
+              : campo.opcoes.map(opcao => <option key={opcao} value={opcao}>{opcao}</option>)}
+          </select>}</Field>)}
+        {entrada('tagsTexto', 'Tags', { maxLength: 260, hint: 'Separe até cinco tags por vírgulas.' })}
+      </fieldset>
+      <fieldset hidden={etapa !== 2}>
         <legend>Área de atendimento</legend>
         <Button variant="secondary" loading={buscandoLocalizacao} onClick={usarLocalizacao}>Usar minha localização</Button>
         {erroLocalizacao && <p role="alert">{erroLocalizacao}</p>}
@@ -118,7 +163,7 @@ function Editor({ oferta, categorias, token }) {
           {entrada('raioKm', 'Raio em quilômetros', { type: 'number', min: 1, max: 100 })}
         </div>
       </fieldset>
-      <fieldset hidden={etapa !== 2}>
+      <fieldset hidden={etapa !== 3}>
         <legend>Preço</legend>
         <Field label="Tipo de cobrança">{attrs => <select {...attrs} className="ds-input" value={dados.tipoPreco ?? ''}
           onChange={event => alterar('tipoPreco', event.target.value)}>
@@ -127,14 +172,15 @@ function Editor({ oferta, categorias, token }) {
         </select>}</Field>
         {Number(dados.tipoPreco) !== 5 && entrada('valor', 'Valor em reais', { type: 'number', min: 0.01, step: 0.01 })}
       </fieldset>
-      <fieldset hidden={etapa !== 3}>
+      <fieldset hidden={etapa !== 4}>
         <legend>Disponibilidade</legend>
         {entrada('disponibilidade', 'Disponibilidade', { maxLength: 200, placeholder: 'Exemplo: Segundas e quartas, das 8h às 17h' })}
         {entrada('formasPagamento', 'Formas de pagamento', { maxLength: 200 })}
       </fieldset>
-      {etapa === 4 && <dl className="oferta-revisao">
+      {etapa === 5 && <dl className="oferta-revisao">
         <dt>Título</dt><dd>{dados.titulo || 'A preencher'}</dd>
         <dt>Descrição</dt><dd>{dados.descricao || 'A preencher'}</dd>
+        {dados.tagsTexto.trim() && <><dt>Tags</dt><dd>{dados.tagsTexto}</dd></>}
         <dt>Área de atendimento</dt><dd>{[dados.bairro, dados.cidade].filter(Boolean).join(', ') || 'A preencher'} · {dados.raioKm || 15} km</dd>
         <dt>Preço</dt><dd>{tiposPreco[Number(dados.tipoPreco) - 1] || 'A preencher'}{dados.valor ? ` · R$ ${dados.valor}` : ''}</dd>
         <dt>Disponibilidade</dt><dd>{dados.disponibilidade || 'A preencher'}</dd>

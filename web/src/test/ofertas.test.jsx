@@ -8,7 +8,7 @@ import WorkerPage from '../pages/WorkerPage.jsx';
 import { api } from '../services/api.js';
 
 vi.mock('../services/api.js', () => ({
-  api: { minhasOfertas: vi.fn(), criarOferta: vi.fn(), oferta: vi.fn(), categories: vi.fn(), editarOferta: vi.fn() },
+  api: { minhasOfertas: vi.fn(), criarOferta: vi.fn(), oferta: vi.fn(), categories: vi.fn(), modeloOferta: vi.fn(), editarOferta: vi.fn() },
 }));
 
 it('cria um rascunho, salva a oferta e retorna à listagem', async () => {
@@ -17,6 +17,7 @@ it('cria um rascunho, salva a oferta e retorna à listagem', async () => {
   api.criarOferta.mockResolvedValue(rascunho);
   api.oferta.mockResolvedValue(rascunho);
   api.categories.mockResolvedValue([{ id: 4, nome: 'Pintura', subcategorias: [] }]);
+  api.modeloOferta.mockResolvedValue({ versao: 1, campos: [{ chave: 'ambiente', rotulo: 'Ambiente', tipo: 'selecao', opcoes: ['Interno', 'Externo'] }] });
   api.editarOferta.mockImplementation(async (_, dados) => ({ ...rascunho, ...dados, versao: 'versao-2' }));
 
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -34,10 +35,14 @@ it('cria um rascunho, salva a oferta e retorna à listagem', async () => {
   fireEvent.click(await screen.findByRole('button', { name: 'Nova oferta' }));
   fireEvent.change(await screen.findByLabelText('Título'), { target: { value: 'Pintura interna' } });
   fireEvent.change(screen.getByLabelText('Categoria'), { target: { value: '4' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Continuar' }));
+  fireEvent.change(await screen.findByLabelText('Ambiente'), { target: { value: 'Interno' } });
+  fireEvent.change(screen.getByLabelText('Tags'), { target: { value: 'Reforma, Apartamento' } });
   fireEvent.click(screen.getByRole('button', { name: 'Salvar oferta' }));
 
   await waitFor(() => expect(api.editarOferta).toHaveBeenCalledWith(42, expect.objectContaining({
-    titulo: 'Pintura interna', categoriaId: 4, versao: 'versao-1',
+    titulo: 'Pintura interna', categoriaId: 4, versao: 'versao-1', versaoModelo: 1,
+    atributos: { ambiente: 'Interno' }, tags: ['Reforma', 'Apartamento'],
   })));
   expect(await screen.findByText('Oferta salva.')).toBeInTheDocument();
   fireEvent.click(screen.getByRole('link', { name: 'Voltar às ofertas' }));

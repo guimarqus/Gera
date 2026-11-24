@@ -37,6 +37,7 @@ export const api = {
   me: () => request('/auth/eu'),
   profileSummary: () => request('/perfil/resumo'),
   categories: () => request('/categorias'),
+  modeloOferta: id => request(`/categorias/${id}/modelo-oferta`),
   minhasOfertas: filtros => request(`/ofertas/minhas?${new URLSearchParams(filtros)}`),
   oferta: id => request(`/ofertas/${id}`),
   criarOferta: () => request('/ofertas', { method: 'POST' }),
