@@ -23,7 +23,7 @@ async function request(path, options = {}, retry = true) {
   }
   const data = response.status === 204 ? null : await response.json().catch(() => null);
   if (!response.ok) {
-    const message = data?.mensagem || data?.title || data?.erros?.map(e => e.mensagem).join(' ') || (response.status === 401 ? 'Usuário ou senha incorretos.' : 'Confira os campos e tente novamente.');
+    const message = data?.mensagem || data?.detail || (data?.errors && Object.values(data.errors).flat().join(' ')) || data?.title || data?.erros?.map(e => e.mensagem).join(' ') || (response.status === 401 ? 'Usuário ou senha incorretos.' : 'Confira os campos e tente novamente.');
     throw new ApiError(message, response.status, data);
   }
   return data;
@@ -37,6 +37,12 @@ export const api = {
   me: () => request('/auth/eu'),
   profileSummary: () => request('/perfil/resumo'),
   categories: () => request('/categorias'),
+  minhasOfertas: filtros => request(`/ofertas/minhas?${new URLSearchParams(filtros)}`),
+  oferta: id => request(`/ofertas/${id}`),
+  criarOferta: () => request('/ofertas', { method: 'POST' }),
+  editarOferta: (id, dados) => request(`/ofertas/${id}`, { method: 'PUT', body: json(dados) }),
+  alterarStatusOferta: (id, status) => request(`/ofertas/${id}/status`, { method: 'PATCH', body: json({ status }) }),
+  excluirOferta: id => request(`/ofertas/${id}`, { method: 'DELETE' }),
   forgotPassword: body => request('/auth/esqueci-senha', { method: 'POST', body: json(body) }, false),
   resetPassword: body => request('/auth/redefinir-senha', { method: 'POST', body: json(body) }, false),
 };

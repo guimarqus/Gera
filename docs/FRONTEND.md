@@ -25,3 +25,6 @@ Crie um componente em `src/pages`, use `PageHeader` e o estado adequado do desig
 ## Rodar e verificar
 
 Na pasta `web`: `npm install`, `npm run dev`, `npm run build` e `npm test`. A suite de interface usa Vitest e Testing Library.
+## Painel do Trabalhador
+
+`/trabalhador` lista as ofertas da sessão com filtro por status e paginação. A ação Nova oferta cria um rascunho no servidor e abre `/trabalhador/ofertas/:id`. O editor recupera a versão salva e usa essa versão para controlar edições concorrentes. Pausa, reativação e exclusão são executadas no painel.
