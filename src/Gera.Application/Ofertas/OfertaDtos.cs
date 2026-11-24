@@ -21,17 +21,22 @@ public sealed record EditarOfertaRequest(
     int? CategoriaId, string? Titulo, string? Descricao, TipoPreco? TipoPreco,
     decimal? Valor, double? Latitude, double? Longitude, int? RaioKm,
     string? Cidade, string? Bairro, string? Disponibilidade, string? FormasPagamento,
-    string Versao);
+    string Versao, Dictionary<string, string>? Atributos = null, string[]? Tags = null,
+    int? VersaoModelo = null);
+
+public sealed record CaracteristicasOferta(int VersaoModelo, Dictionary<string, string> Atributos);
 
 public sealed record OfertaPrivadaDto(
     int Id, int? CategoriaId, string Titulo, string Descricao, TipoPreco? TipoPreco,
     decimal? Valor, double? Latitude, double? Longitude, int RaioKm, string? Cidade,
     string? Bairro, string? Disponibilidade, string? FormasPagamento, StatusOferta Status,
-    DateTime CriadoEm, DateTime? PublicadoEm, string Versao);
+    DateTime CriadoEm, DateTime? PublicadoEm, string Versao, CaracteristicasOferta? Caracteristicas,
+    IReadOnlyList<string> Tags);
 
 public sealed record OfertaPublicaDto(
     int Id, int? CategoriaId, string Titulo, string Descricao, TipoPreco? TipoPreco,
-    decimal? Valor, string? Cidade, string? Bairro, string? Disponibilidade);
+    decimal? Valor, string? Cidade, string? Bairro, string? Disponibilidade,
+    CaracteristicasOferta? Caracteristicas, IReadOnlyList<string> Tags);
 
 public sealed class EditarOfertaValidator : AbstractValidator<EditarOfertaRequest>
 {
@@ -52,5 +57,10 @@ public sealed class EditarOfertaValidator : AbstractValidator<EditarOfertaReques
         RuleFor(o => o.Disponibilidade).MaximumLength(200);
         RuleFor(o => o.FormasPagamento).MaximumLength(200);
         RuleFor(o => o.Versao).NotEmpty().Length(12);
+        RuleFor(o => o.Tags).Must(tags => tags is null || tags.Length <= 5)
+            .WithMessage("Informe no máximo cinco tags.");
+        RuleForEach(o => o.Tags).NotEmpty().MaximumLength(50);
+        RuleFor(o => o.Atributos).Must(atributos => atributos is null || atributos.Count <= 12)
+            .WithMessage("O modelo aceita no máximo doze características.");
     }
 }

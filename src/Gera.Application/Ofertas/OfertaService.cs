@@ -7,10 +7,12 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using System.Data;
+using System.Text.Json;
 
 namespace Gera.Application.Ofertas;
 
-public sealed class OfertaService(IAppDbContext db, UserManager<Usuario> usuarios, IOptions<OfertaOptions> options)
+public sealed class OfertaService(
+    IAppDbContext db, UserManager<Usuario> usuarios, IOptions<OfertaOptions> options, ModeloOfertaService modelos)
 {
     private const string PapelPrestador = "Prestador";
 
@@ -29,21 +31,22 @@ public sealed class OfertaService(IAppDbContext db, UserManager<Usuario> usuario
         if (status.HasValue)
             query = query.Where(o => o.Status == status.Value);
 
-        var ofertas = await query.AsNoTracking().OrderByDescending(o => o.Id)
+        var ofertas = await query.AsNoTracking().Include(o => o.Tags).OrderByDescending(o => o.Id)
             .Skip((pagina - 1) * tamanho).Take(tamanho).ToListAsync(ct);
         return ofertas.Select(Privada).ToArray();
     }
 
     public async Task<object> ObterAsync(int id, int? usuarioId, CancellationToken ct)
     {
-        var oferta = await Existentes().AsNoTracking()
+        var oferta = await Existentes().AsNoTracking().Include(o => o.Tags)
             .SingleOrDefaultAsync(o => o.Id == id && (o.PrestadorId == usuarioId || o.Status == StatusOferta.Ativo), ct)
             ?? throw new NotFoundException("Oferta não encontrada.");
         if (oferta.PrestadorId == usuarioId)
             return Privada(oferta);
 
         return new OfertaPublicaDto(oferta.Id, oferta.CategoriaId, oferta.Titulo, oferta.Descricao,
-            oferta.TipoPreco, oferta.Valor, oferta.Cidade, oferta.Bairro, oferta.Disponibilidade);
+            oferta.TipoPreco, oferta.Valor, oferta.Cidade, oferta.Bairro, oferta.Disponibilidade,
+            LerCaracteristicas(oferta), LerTags(oferta));
     }
 
     public async Task<OfertaPrivadaDto> EditarAsync(int id, int usuarioId, EditarOfertaRequest dados, CancellationToken ct)
@@ -57,6 +60,26 @@ public sealed class OfertaService(IAppDbContext db, UserManager<Usuario> usuario
             throw new DomainException("Selecione uma categoria ativa.");
         if (dados.TipoPreco is TipoPreco.ACombinar && dados.Valor.HasValue)
             throw new DomainException("A modalidade a combinar não aceita valor.");
+
+        if (dados.Atributos is not null)
+        {
+            var caracteristicas = await modelos.ValidarAsync(dados.CategoriaId, dados.VersaoModelo, dados.Atributos, ct);
+            oferta.AtributosJson = caracteristicas is null ? null : JsonSerializer.Serialize(caracteristicas);
+        }
+        else if (oferta.CategoriaId != dados.CategoriaId)
+        {
+            oferta.AtributosJson = null;
+        }
+
+        if (dados.Tags is not null)
+        {
+            var tags = TagsOferta.Normalizar(dados.Tags);
+            if (!LerTags(oferta).SequenceEqual(tags, StringComparer.Ordinal))
+            {
+                db.OfertaTags.RemoveRange(oferta.Tags);
+                oferta.Tags = tags.Select(tag => new OfertaTag { Tag = tag }).ToList();
+            }
+        }
 
         oferta.CategoriaId = dados.CategoriaId;
         oferta.Titulo = dados.Titulo?.Trim() ?? string.Empty;
@@ -163,10 +186,17 @@ public sealed class OfertaService(IAppDbContext db, UserManager<Usuario> usuario
     private IQueryable<Oferta> Existentes() => db.Ofertas.Where(o => o.ExcluidoEm == null);
 
     private async Task<Oferta> ProprietariaAsync(int id, int usuarioId, CancellationToken ct) =>
-        await Existentes().SingleOrDefaultAsync(o => o.Id == id && o.PrestadorId == usuarioId, ct)
+        await Existentes().Include(o => o.Tags).SingleOrDefaultAsync(o => o.Id == id && o.PrestadorId == usuarioId, ct)
             ?? throw new NotFoundException("Oferta não encontrada.");
 
     private static OfertaPrivadaDto Privada(Oferta o) => new(o.Id, o.CategoriaId, o.Titulo, o.Descricao,
         o.TipoPreco, o.Valor, o.Latitude, o.Longitude, o.RaioKm, o.Cidade, o.Bairro, o.Disponibilidade,
-        o.FormasPagamento, o.Status, o.CriadoEm, o.PublicadoEm, Convert.ToBase64String(o.Versao));
+        o.FormasPagamento, o.Status, o.CriadoEm, o.PublicadoEm, Convert.ToBase64String(o.Versao),
+        LerCaracteristicas(o), LerTags(o));
+
+    private static CaracteristicasOferta? LerCaracteristicas(Oferta oferta) =>
+        oferta.AtributosJson is null ? null : JsonSerializer.Deserialize<CaracteristicasOferta>(oferta.AtributosJson);
+
+    private static string[] LerTags(Oferta oferta) => oferta.Tags
+        .OrderBy(tag => tag.Id).Select(tag => tag.Tag).ToArray();
 }

@@ -78,7 +78,8 @@ public sealed class OfertaRascunhoTests
         rascunho.CategoriaId.Should().BeNull();
         var url = $"/api/ofertas/{rascunho.Id}";
         var dados = new EditarOfertaRequest(1, "Pintura residencial", null, null, null,
-            -3.119, -60.021, 20, "Manaus", null, null, null, rascunho.Versao);
+            -3.119, -60.021, 20, "Manaus", null, null, null, rascunho.Versao,
+            new() { ["tipoObra"] = "Residencial" }, ["Reforma", "réforma"], VersaoModelo: 1);
 
         (await visitante.GetAsync(url)).StatusCode.Should().Be(HttpStatusCode.NotFound);
         (await visitante.PutAsJsonAsync(url, dados)).StatusCode.Should().Be(HttpStatusCode.NotFound);
@@ -87,6 +88,9 @@ public sealed class OfertaRascunhoTests
 
         var lista = await proprietario.GetFromJsonAsync<OfertaPrivadaDto[]>("/api/ofertas/minhas");
         lista.Should().ContainSingle(o => o.Id == rascunho.Id && o.Titulo == dados.Titulo);
+        var retomado = await proprietario.GetFromJsonAsync<OfertaPrivadaDto>(url);
+        retomado!.Caracteristicas!.Atributos.Should().Contain("tipoObra", "Residencial");
+        retomado.Tags.Should().Equal("Reforma");
         (await proprietario.DeleteAsync(url)).StatusCode.Should().Be(HttpStatusCode.NoContent);
         (await proprietario.GetAsync(url)).StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
