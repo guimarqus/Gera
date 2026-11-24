@@ -9,8 +9,8 @@ public class Oferta
     public int PrestadorId { get; set; }
     public Usuario Prestador { get; set; } = null!;
 
-    public int CategoriaId { get; set; }
-    public Categoria Categoria { get; set; } = null!;
+    public int? CategoriaId { get; set; }
+    public Categoria? Categoria { get; set; }
 
     public string Titulo { get; set; } = string.Empty;
     public string Descricao { get; set; } = string.Empty;
@@ -19,19 +19,25 @@ public class Oferta
     /// Coluna espacial geography para consultas com índice espacial.
     /// SRID 4326 (WGS 84).
     /// </summary>
-    public Point Localizacao { get; set; } = null!;
+    public Point? Localizacao { get; set; }
 
-    public double Latitude { get; set; }
-    public double Longitude { get; set; }
+    public double? Latitude { get; set; }
+    public double? Longitude { get; set; }
     public int RaioKm { get; set; } = 15;
     public string? AreaAtendida { get; set; }
 
-    public TipoPreco TipoPreco { get; set; } = TipoPreco.Diaria;
-    public decimal Valor { get; set; }
+    public TipoPreco? TipoPreco { get; set; }
+    public decimal? Valor { get; set; }
     public bool ValorNegociavel { get; set; }
     public string? Disponibilidade { get; set; }
     public string? FormasPagamento { get; set; }
-    public StatusOferta Status { get; set; } = StatusOferta.Ativo;
+    public StatusOferta Status { get; set; } = StatusOferta.Rascunho;
+    public DateTime? PublicadoEm { get; set; }
+    public DateTime? ExcluidoEm { get; set; }
+    public string? Bairro { get; set; }
+    public string? Cidade { get; set; }
+    public string? AtributosJson { get; set; }
+    public byte[] Versao { get; set; } = [];
 
     public double NotaMedia { get; set; } = 5.0;
     public int TotalAvaliacoes { get; set; }

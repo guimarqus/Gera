@@ -3,6 +3,8 @@ using Gera.Domain.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
+using System.Data;
 
 namespace Gera.Infrastructure.Data;
 
@@ -28,6 +30,9 @@ public class AppDbContext : IdentityDbContext<Usuario, IdentityRole<int>, int>, 
     public DbSet<Bloqueio> Bloqueios => Set<Bloqueio>();
     public DbSet<Pagamento> Pagamentos => Set<Pagamento>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+
+    public Task<IDbContextTransaction> BeginTransactionAsync(IsolationLevel isolationLevel, CancellationToken cancellationToken) =>
+        Database.BeginTransactionAsync(isolationLevel, cancellationToken);
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

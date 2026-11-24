@@ -27,6 +27,12 @@ builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddMemoryCache();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ICategoriasService, CategoriasService>();
+builder.Services.AddScoped<Gera.Application.Ofertas.OfertaService>();
+builder.Services.AddScoped<Gera.Application.Ofertas.ModeloOfertaService>();
+builder.Services.AddOptions<Gera.Application.Ofertas.OfertaOptions>()
+    .BindConfiguration("Ofertas")
+    .Validate(options => options.LimiteAtivasPorUsuario > 0, "O limite de ofertas ativas deve ser positivo.")
+    .ValidateOnStart();
 builder.Services.AddScoped<IProfileSummaryService, ProfileSummaryService>();
 builder.Services.AddSingleton<ITokenService, TokenService>();
 builder.Services.AddScoped<IEmailSender>(provider => builder.Environment.IsDevelopment()

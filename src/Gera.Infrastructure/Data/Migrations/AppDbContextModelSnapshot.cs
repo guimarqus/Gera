@@ -843,13 +843,24 @@ namespace Gera.Infrastructure.Data.Migrations
                         .HasMaxLength(150)
                         .HasColumnType("nvarchar(150)");
 
+                    b.Property<string>("AtributosJson")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateTime>("AtualizadoEm")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("datetime2")
                         .HasDefaultValueSql("GETUTCDATE()");
 
-                    b.Property<int>("CategoriaId")
+                    b.Property<string>("Bairro")
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
+
+                    b.Property<int?>("CategoriaId")
                         .HasColumnType("int");
+
+                    b.Property<string>("Cidade")
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
 
                     b.Property<DateTime>("CriadoEm")
                         .ValueGeneratedOnAdd()
@@ -865,18 +876,20 @@ namespace Gera.Infrastructure.Data.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
+                    b.Property<DateTime?>("ExcluidoEm")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("FormasPagamento")
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
-                    b.Property<double>("Latitude")
+                    b.Property<double?>("Latitude")
                         .HasColumnType("float");
 
                     b.Property<Point>("Localizacao")
-                        .IsRequired()
                         .HasColumnType("geography");
 
-                    b.Property<double>("Longitude")
+                    b.Property<double?>("Longitude")
                         .HasColumnType("float");
 
                     b.Property<double>("NotaMedia")
@@ -885,13 +898,16 @@ namespace Gera.Infrastructure.Data.Migrations
                     b.Property<int>("PrestadorId")
                         .HasColumnType("int");
 
+                    b.Property<DateTime?>("PublicadoEm")
+                        .HasColumnType("datetime2");
+
                     b.Property<int>("RaioKm")
                         .HasColumnType("int");
 
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
-                    b.Property<int>("TipoPreco")
+                    b.Property<int?>("TipoPreco")
                         .HasColumnType("int");
 
                     b.Property<string>("Titulo")
@@ -905,17 +921,20 @@ namespace Gera.Infrastructure.Data.Migrations
                     b.Property<int>("TotalServicos")
                         .HasColumnType("int");
 
-                    b.Property<decimal>("Valor")
+                    b.Property<decimal?>("Valor")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<bool>("ValorNegociavel")
                         .HasColumnType("bit");
 
-                    b.HasKey("Id");
+                    b.Property<byte[]>("Versao")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
 
-                    b.HasIndex("Localizacao")
-                        .HasDatabaseName("SPATIAL_IX_Ofertas_Localizacao");
+                    b.HasKey("Id");
 
                     b.HasIndex("PrestadorId");
 
@@ -1641,8 +1660,7 @@ namespace Gera.Infrastructure.Data.Migrations
                     b.HasOne("Gera.Domain.Entities.Categoria", "Categoria")
                         .WithMany("Ofertas")
                         .HasForeignKey("CategoriaId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("Gera.Domain.Entities.Usuario", "Prestador")
                         .WithMany("Ofertas")

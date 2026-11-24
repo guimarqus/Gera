@@ -1,6 +1,8 @@
 using Gera.Domain.Entities;
+using System.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace Gera.Application.Interfaces;
 
@@ -24,6 +26,8 @@ public interface IAppDbContext
     DbSet<Pagamento> Pagamentos { get; }
 
     DatabaseFacade Database { get; }
+
+    Task<IDbContextTransaction> BeginTransactionAsync(IsolationLevel isolationLevel, CancellationToken cancellationToken);
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

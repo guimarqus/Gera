@@ -22,8 +22,11 @@ public class OfertaConfiguration : IEntityTypeConfiguration<Oferta>
 
         // Coluna geography no SQL Server para NetTopologySuite Point
         builder.Property(o => o.Localizacao)
-            .HasColumnType("geography")
-            .IsRequired();
+            .HasColumnType("geography");
+
+        builder.Property(o => o.Bairro).HasMaxLength(120);
+        builder.Property(o => o.Cidade).HasMaxLength(120);
+        builder.Property(o => o.Versao).IsRowVersion();
 
         builder.Property(o => o.AreaAtendida)
             .HasMaxLength(150);
@@ -58,9 +61,7 @@ public class OfertaConfiguration : IEntityTypeConfiguration<Oferta>
         builder.HasIndex(o => new { o.CategoriaId, o.Status })
             .HasDatabaseName("IX_Ofertas_CategoriaId_Status");
 
-        // Índice espacial em Ofertas.Localizacao
-        builder.HasIndex(o => o.Localizacao)
-            .HasDatabaseName("SPATIAL_IX_Ofertas_Localizacao");
+        // O indice espacial e gerenciado por SQL na migration inicial.
     }
 }
 

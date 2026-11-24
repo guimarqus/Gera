@@ -82,3 +82,15 @@ O limite padrão para cada endereço IP é de 10 requisições por minuto nos en
 ```json
 { "nome": "Maria Silva", "fotoUrl": null, "papeis": ["Cliente"], "papelAtivo": "Cliente" }
 ```
+## Ofertas e rascunhos
+
+- `GET /api/categorias/{id}/modelo-oferta` retorna a versão e os campos do modelo de cadastro. Subcategorias herdam o modelo da categoria principal. Categorias inativas ou inexistentes retornam `404`.
+
+- `POST /api/ofertas` cria um rascunho para o usuário autenticado. O corpo pode ser vazio. A resposta é `201 Created`.
+- `GET /api/ofertas/minhas?pagina=1&tamanho=20` lista as ofertas do usuário. Aceita filtro opcional `status` e até 100 itens por página.
+- `GET /api/ofertas/{id}` devolve os dados de edição ao dono. Para visitantes, somente ofertas ativas são visíveis, com os dados públicos e sem coordenadas. Rascunhos e ofertas excluídas retornam `404` para terceiros.
+- `PUT /api/ofertas/{id}` substitui os dados editáveis da oferta. Envie a `versao` da última resposta. Uma versão desatualizada retorna `409`. Coordenadas devem ser enviadas juntas. Ofertas ativas precisam continuar atendendo aos requisitos de publicação.
+- `DELETE /api/ofertas/{id}` registra a exclusão lógica e retorna `204`. Operações privadas em ofertas de terceiros retornam `404`.
+- `POST /api/ofertas/{id}/publicar` publica um rascunho completo e concede o papel Prestador na mesma transação. Chamadas repetidas para uma oferta ativa retornam seu estado atual.
+- `PATCH /api/ofertas/{id}/status` aceita `{"status":3}` para pausar e `{"status":2}` para reativar. O limite de ofertas ativas por usuário é configurável em `Ofertas:LimiteAtivasPorUsuario` com padrão 20.
+- A publicação exige categoria ativa, título com 5 a 120 caracteres, descrição com 30 a 2.000 caracteres, pelo menos uma foto, localização, raio de 1 a 100 km, disponibilidade e preço compatível com a modalidade.

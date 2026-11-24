@@ -34,6 +34,7 @@ public class GlobalExceptionHandlerMiddleware
 
         var (statusCode, title, detail) = exception switch
         {
+            Microsoft.EntityFrameworkCore.DbUpdateConcurrencyException => (HttpStatusCode.Conflict, "Conflito de atualização", "O registro foi alterado. Recarregue os dados e tente novamente."),
             NotFoundException notFound => (HttpStatusCode.NotFound, "Recurso não encontrado", notFound.Message),
             NaoAutorizadoException unauthorized => (HttpStatusCode.Forbidden, "Acesso não autorizado", unauthorized.Message),
             TransicaoInvalidaException transicao => (HttpStatusCode.BadRequest, "Transição de etapa inválida", transicao.Message),
