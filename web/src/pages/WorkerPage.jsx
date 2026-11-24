@@ -31,7 +31,7 @@ export default function WorkerPage() {
     onSuccess: (resultado, { acao }) => {
       setConfirmarExclusao(null);
       queryClient.invalidateQueries({ queryKey: ['minhas-ofertas', token] });
-      if (acao === 'criar') navigate(`/trabalhador/ofertas/${resultado.id}`);
+      if (acao === 'criar') navigate(`/trabalhador/ofertas/nova?rascunho=${resultado.id}`);
     },
   });
 

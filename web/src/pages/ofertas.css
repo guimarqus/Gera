@@ -48,3 +48,17 @@
   margin: 0 0 var(--space-3);
   overflow-wrap: anywhere;
 }
+
+.oferta-foto {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.oferta-foto img {
+  width: 112px;
+  height: 84px;
+  object-fit: cover;
+  border-radius: var(--radius);
+}

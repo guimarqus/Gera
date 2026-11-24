@@ -4,11 +4,12 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../auth/AuthContext.jsx';
 import { Button, Card, ErrorState, Field, Input, PageHeader, Skeleton } from '../design/components.jsx';
 import { api } from '../services/api.js';
+import FotosOferta from './FotosOferta.jsx';
 import './ofertas.css';
 
 const tiposPreco = ['Por hora', 'Por diária', 'Por metro quadrado', 'Por empreitada', 'A combinar'];
 const camposNumericos = ['categoriaId', 'tipoPreco', 'valor', 'latitude', 'longitude', 'raioKm'];
-const etapas = ['Dados do serviço', 'Características', 'Área de atendimento', 'Preço', 'Disponibilidade', 'Revisão'];
+const etapas = ['Dados do serviço', 'Características', 'Área de atendimento', 'Fotografias', 'Preço', 'Disponibilidade', 'Revisão'];
 const intervaloAutosave = 800;
 const preenchido = valor => valor != null && valor !== '';
 const paraEdicao = oferta => ({ ...oferta, tagsTexto: (oferta.tags ?? []).join(', ') });
@@ -27,6 +28,12 @@ function Editor({ oferta, categorias, token }) {
     queryKey: ['modelo-oferta', dados.categoriaId],
     queryFn: () => api.modeloOferta(dados.categoriaId),
     enabled: etapa === 1 && preenchido(dados.categoriaId),
+  });
+  const chaveFotos = ['fotos-oferta', token, oferta.id];
+  const fotos = useQuery({
+    queryKey: chaveFotos,
+    queryFn: () => api.fotosOferta(oferta.id),
+    enabled: etapa === 3 || etapa === 6,
   });
   const mutation = useMutation({
     mutationFn: versaoEnviada => {
@@ -50,12 +57,30 @@ function Editor({ oferta, categorias, token }) {
     },
   });
   const { mutate, isPending, isError } = mutation;
+  const acaoOferta = useMutation({
+    mutationFn: ({ tipo, fotoIds, fotoId }) => {
+      if (tipo === 'publicar') return api.publicarOferta(oferta.id);
+      if (tipo === 'ordem') return api.ordenarFotosOferta(oferta.id, fotoIds, dados.versao);
+      if (tipo === 'capa') return api.capaOferta(oferta.id, fotoId, dados.versao);
+      return api.excluirFotoOferta(oferta.id, fotoId, dados.versao);
+    },
+    onSuccess: (resultado, { tipo }) => {
+      const atualizado = tipo === 'publicar' ? paraEdicao(resultado) : { ...dados, versao: resultado.versao };
+      setDados(atualizado);
+      setSalvos(atualizado);
+      queryClient.setQueryData(['oferta-edicao', token, String(oferta.id)], atual =>
+        tipo === 'publicar' ? resultado : { ...atual, versao: resultado.versao });
+      if (tipo !== 'publicar') queryClient.setQueryData(chaveFotos, resultado);
+      queryClient.invalidateQueries({ queryKey: ['minhas-ofertas', token] });
+    },
+  });
+  const ocupado = isPending || acaoOferta.isPending;
 
   useEffect(() => {
-    if (!alterado || isPending || isError || !coordenadasCompletas) return undefined;
+    if (!alterado || ocupado || isError || !coordenadasCompletas) return undefined;
     const timer = window.setTimeout(() => mutate(dados), intervaloAutosave);
     return () => window.clearTimeout(timer);
-  }, [alterado, isPending, isError, coordenadasCompletas, mutate, dados]);
+  }, [alterado, ocupado, isError, coordenadasCompletas, mutate, dados]);
 
   useEffect(() => {
     if (!alterado) return undefined;
@@ -110,12 +135,22 @@ function Editor({ oferta, categorias, token }) {
       onChange={event => alterar(campo, event.target.value)} {...props} />;
   }
 
+  const faltantes = [
+    !preenchido(dados.categoriaId) && 'Selecione uma categoria.',
+    (dados.titulo?.trim().length ?? 0) < 5 && 'Informe um título com pelo menos 5 caracteres.',
+    (dados.descricao?.trim().length ?? 0) < 30 && 'Informe uma descrição com pelo menos 30 caracteres.',
+    (!preenchido(dados.latitude) || !preenchido(dados.longitude)) && 'Informe a localização do atendimento.',
+    !fotos.data?.fotos.length && 'Adicione pelo menos uma foto.',
+    (!preenchido(dados.tipoPreco) || (Number(dados.tipoPreco) !== 5 && !(Number(dados.valor) > 0))) && 'Informe o preço do serviço.',
+    !dados.disponibilidade?.trim() && 'Informe a disponibilidade.',
+  ].filter(Boolean);
+
   return <Card className="oferta-editor">
     <p>Etapa {etapa + 1} de {etapas.length}</p>
     <h2 ref={tituloEtapa} tabIndex={-1}>{etapas[etapa]}</h2>
     <form noValidate onSubmit={event => {
       event.preventDefault();
-      if (alterado && !isPending && coordenadasCompletas) mutate(dados);
+      if (alterado && !ocupado && coordenadasCompletas) mutate(dados);
     }}>
       <fieldset hidden={etapa !== 0}>
         <legend>Dados do serviço</legend>
@@ -163,7 +198,9 @@ function Editor({ oferta, categorias, token }) {
           {entrada('raioKm', 'Raio em quilômetros', { type: 'number', min: 1, max: 100 })}
         </div>
       </fieldset>
-      <fieldset hidden={etapa !== 3}>
+      {etapa === 3 && <FotosOferta consulta={fotos} bloqueado={ocupado || alterado || buscandoLocalizacao}
+        alterar={acaoOferta.mutate} />}
+      <fieldset hidden={etapa !== 4}>
         <legend>Preço</legend>
         <Field label="Tipo de cobrança">{attrs => <select {...attrs} className="ds-input" value={dados.tipoPreco ?? ''}
           onChange={event => alterar('tipoPreco', event.target.value)}>
@@ -172,12 +209,12 @@ function Editor({ oferta, categorias, token }) {
         </select>}</Field>
         {Number(dados.tipoPreco) !== 5 && entrada('valor', 'Valor em reais', { type: 'number', min: 0.01, step: 0.01 })}
       </fieldset>
-      <fieldset hidden={etapa !== 4}>
+      <fieldset hidden={etapa !== 5}>
         <legend>Disponibilidade</legend>
         {entrada('disponibilidade', 'Disponibilidade', { maxLength: 200, placeholder: 'Exemplo: Segundas e quartas, das 8h às 17h' })}
         {entrada('formasPagamento', 'Formas de pagamento', { maxLength: 200 })}
       </fieldset>
-      {etapa === 5 && <dl className="oferta-revisao">
+      {etapa === 6 && <dl className="oferta-revisao">
         <dt>Título</dt><dd>{dados.titulo || 'A preencher'}</dd>
         <dt>Descrição</dt><dd>{dados.descricao || 'A preencher'}</dd>
         {dados.tagsTexto.trim() && <><dt>Tags</dt><dd>{dados.tagsTexto}</dd></>}
@@ -185,24 +222,33 @@ function Editor({ oferta, categorias, token }) {
         <dt>Preço</dt><dd>{tiposPreco[Number(dados.tipoPreco) - 1] || 'A preencher'}{dados.valor ? ` · R$ ${dados.valor}` : ''}</dd>
         <dt>Disponibilidade</dt><dd>{dados.disponibilidade || 'A preencher'}</dd>
       </dl>}
+      {etapa === 6 && dados.status === 1 && faltantes.length > 0 && <>
+        <h3>Antes de publicar</h3>
+        <ul>{faltantes.map(item => <li key={item}>{item}</li>)}</ul>
+      </>}
       {!coordenadasCompletas && <p role="alert">Informe latitude e longitude juntas para salvar.</p>}
       {mutation.isError && <p role="alert">{mutation.error.message}</p>}
+      {acaoOferta.isError && <p role="alert">{acaoOferta.error.message}</p>}
+      {acaoOferta.isSuccess && acaoOferta.variables.tipo === 'publicar' && <p role="status">Oferta publicada.</p>}
       <p role="status">{isPending ? 'Salvando oferta…' : alterado ? 'Há alterações não salvas.' : 'Oferta salva.'}</p>
       <div className="oferta-acoes">
-        {etapa > 0 && <Button variant="secondary" onClick={() => irPara(etapa - 1)}>Voltar</Button>}
-        {etapa < etapas.length - 1 && <Button onClick={() => irPara(etapa + 1)}>Continuar</Button>}
+        {etapa > 0 && <Button variant="secondary" disabled={acaoOferta.isPending} onClick={() => irPara(etapa - 1)}>Voltar</Button>}
+        {etapa < etapas.length - 1 && <Button disabled={acaoOferta.isPending} onClick={() => irPara(etapa + 1)}>Continuar</Button>}
+        {etapa === 6 && dados.status === 1 && <Button disabled={ocupado || alterado || buscandoLocalizacao || faltantes.length > 0}
+          onClick={() => acaoOferta.mutate({ tipo: 'publicar' })}>Publicar oferta</Button>}
         <Button variant="secondary" type="submit" loading={isPending}
-          disabled={!alterado || isPending || !coordenadasCompletas}>{isError ? 'Tentar salvar novamente' : 'Salvar oferta'}</Button>
+          disabled={!alterado || ocupado || !coordenadasCompletas}>{isError ? 'Tentar salvar novamente' : 'Salvar oferta'}</Button>
         <Link className="ds-button ds-button--secondary" to="/trabalhador" onClick={event => {
-          if (mutation.isPending || (alterado && !window.confirm('Sair sem salvar as alterações?'))) event.preventDefault();
+          if (ocupado || (alterado && !window.confirm('Sair sem salvar as alterações?'))) event.preventDefault();
         }}>Voltar às ofertas</Link>
       </div>
     </form>
   </Card>;
 }
 
-export default function OfertaEditorPage() {
-  const { id } = useParams();
+export default function OfertaEditorPage({ rascunhoId } = {}) {
+  const { id: idRota } = useParams();
+  const id = rascunhoId ?? idRota;
   const { token } = useAuth();
   const oferta = useQuery({ queryKey: ['oferta-edicao', token, id], queryFn: () => api.oferta(id) });
   const categorias = useQuery({ queryKey: ['categorias'], queryFn: api.categories });
