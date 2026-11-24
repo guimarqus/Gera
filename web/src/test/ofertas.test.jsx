@@ -43,3 +43,33 @@ it('cria um rascunho, salva a oferta e retorna à listagem', async () => {
   fireEvent.click(screen.getByRole('link', { name: 'Voltar às ofertas' }));
   expect(await screen.findByRole('heading', { name: 'Minhas ofertas' })).toBeInTheDocument();
 });
+
+it('envia a edição mais recente com a versão retornada pelo primeiro autosave', async () => {
+  const rascunho = { id: 42, status: 1, titulo: '', versao: 'versao-1' };
+  api.oferta.mockResolvedValue(rascunho);
+  api.categories.mockResolvedValue([]);
+  api.editarOferta.mockReset();
+  let concluirPrimeiro;
+  api.editarOferta.mockImplementationOnce((_, dados) => new Promise(resolve => {
+    concluirPrimeiro = () => resolve({ ...dados, versao: 'versao-2' });
+  })).mockImplementationOnce(async (_, dados) => ({ ...dados, versao: 'versao-3' }));
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+
+  render(<AuthContext.Provider value={{ token: 'sessao-teste' }}>
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter initialEntries={['/trabalhador/ofertas/42']}>
+        <Routes><Route path="/trabalhador/ofertas/:id" element={<OfertaEditorPage />} /></Routes>
+      </MemoryRouter>
+    </QueryClientProvider>
+  </AuthContext.Provider>);
+
+  const titulo = await screen.findByLabelText('Título');
+  fireEvent.change(titulo, { target: { value: 'Pintura' } });
+  await waitFor(() => expect(api.editarOferta).toHaveBeenCalledTimes(1), { timeout: 2000 });
+  fireEvent.change(titulo, { target: { value: 'Pintura interna' } });
+  expect(api.editarOferta).toHaveBeenCalledTimes(1);
+  concluirPrimeiro();
+  await waitFor(() => expect(api.editarOferta).toHaveBeenNthCalledWith(2, 42,
+    expect.objectContaining({ titulo: 'Pintura interna', versao: 'versao-2' })), { timeout: 2000 });
+  expect(titulo).toHaveValue('Pintura interna');
+});
