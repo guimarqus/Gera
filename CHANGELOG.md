@@ -21,3 +21,7 @@ Consulte [documentação da Etapa 9](docs/ETAPA-9-AVALIACOES-CONFIANCA.md).
 ## Etapa 10 — administração
 
 Consulte [documentação da Etapa 10](docs/ETAPA-10-ADMINISTRACAO.md).
+
+## Etapa 11 — e-mail e verificação
+
+Consulte [documentação da Etapa 11](docs/ETAPA-11-PAGAMENTOS-VERIFICACAO-EMAIL.md). A integração de pagamentos segue pendente da escolha de provedor e regras comerciais.

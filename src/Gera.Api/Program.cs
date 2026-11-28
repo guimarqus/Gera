@@ -46,11 +46,16 @@ builder.Services.AddScoped<Gera.Application.Mensagens.NotificacaoService>();
 builder.Services.AddScoped<Gera.Application.Confianca.ConfiancaService>();
 builder.Services.AddScoped<Gera.Application.Admin.AdminService>();
 builder.Services.AddScoped<IAuthorizationHandler, AdministradorAuthorizationHandler>();
+var smtpConfigurado = !string.IsNullOrWhiteSpace(builder.Configuration["Email:Smtp:Host"]);
+if (!builder.Environment.IsDevelopment() || smtpConfigurado)
+    builder.Services.AddOptions<SmtpEmailOptions>().BindConfiguration("Email:Smtp")
+        .Validate(options => options.IsValid(), "Configure Email:Smtp com host, porta, TLS, remetente e credenciais SMTP válidas.")
+        .ValidateOnStart();
 builder.Services.AddSignalR();
 builder.Services.AddSingleton<ITokenService, TokenService>();
-builder.Services.AddScoped<IEmailSender>(provider => builder.Environment.IsDevelopment()
-    ? ActivatorUtilities.CreateInstance<DevelopmentEmailSender>(provider)
-    : ActivatorUtilities.CreateInstance<NullEmailSender>(provider));
+builder.Services.AddScoped<IEmailSender>(provider => !builder.Environment.IsDevelopment() || smtpConfigurado
+    ? ActivatorUtilities.CreateInstance<SmtpEmailSender>(provider)
+    : ActivatorUtilities.CreateInstance<DevelopmentEmailSender>(provider));
 
 // Controladores e FluentValidation
 builder.Services.AddControllers();

@@ -6,6 +6,6 @@ public sealed record OfertaPrestadorDto(
     string? Bairro, string? FotoCapaUrl, DateTime? PublicadoEm);
 
 public sealed record PrestadorPublicoDto(
-    int Id, string Nome, string? FotoUrl, string? Biografia, DateTime Desde,
+    int Id, string Nome, string? FotoUrl, string? Biografia, DateTime Desde, bool Verificado,
     double? NotaMedia, int TotalAvaliacoes, int TotalOfertas, int Pagina,
     int Tamanho, int TotalPaginas, IReadOnlyList<OfertaPrestadorDto> Ofertas);

@@ -12,7 +12,7 @@ public sealed class PrestadorPublicoService(IAppDbContext db)
         var prestador = await db.Usuarios.AsNoTracking().Where(usuario => usuario.Id == id && usuario.Ativo &&
             usuario.Ofertas.Any(oferta => oferta.Status == StatusOferta.Ativo && oferta.ExcluidoEm == null &&
                 oferta.Categoria != null && oferta.Categoria.Ativo))
-            .Select(usuario => new { usuario.Id, usuario.Nome, usuario.FotoUrl, usuario.Biografia, usuario.CriadoEm })
+            .Select(usuario => new { usuario.Id, usuario.Nome, usuario.FotoUrl, usuario.Biografia, usuario.CriadoEm, usuario.Verificado })
             .SingleOrDefaultAsync(ct)
             ?? throw new NotFoundException("Prestador não encontrado.");
 
@@ -35,7 +35,7 @@ public sealed class PrestadorPublicoService(IAppDbContext db)
             .ToListAsync(ct);
 
         return new PrestadorPublicoDto(prestador.Id, prestador.Nome, prestador.FotoUrl,
-            prestador.Biografia, prestador.CriadoEm, avaliacoes?.Media, avaliacoes?.Total ?? 0,
+            prestador.Biografia, prestador.CriadoEm, prestador.Verificado, avaliacoes?.Media, avaliacoes?.Total ?? 0,
             totalOfertas, pagina, tamanho, (int)Math.Ceiling(totalOfertas / (double)tamanho), itens);
     }
 }

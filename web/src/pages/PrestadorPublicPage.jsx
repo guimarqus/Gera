@@ -1,7 +1,7 @@
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, BriefcaseBusiness, Star } from 'lucide-react';
-import { Avatar, Button, Card, EmptyState, ErrorState, Skeleton } from '../design/components.jsx';
+import { Avatar, Badge, Button, Card, EmptyState, ErrorState, Skeleton } from '../design/components.jsx';
 import { api } from '../services/api.js';
 import { useAuth } from '../auth/AuthContext.jsx';
 import './public-details.css';
@@ -42,7 +42,7 @@ export default function PrestadorPublicPage() {
     <Link className="public-detail__back" to="/"><ArrowLeft size={18} aria-hidden="true" /> Voltar aos serviços</Link>
     <header className="prestador-publico">
       <Avatar name={prestador.nome} src={prestador.fotoUrl} size="lg" />
-      <div><p className="page-heading__eyebrow">PERFIL DO PRESTADOR</p><h1>{prestador.nome}</h1>
+      <div><p className="page-heading__eyebrow">PERFIL DO PRESTADOR</p><h1>{prestador.nome} {prestador.verificado && <Badge>Verificado</Badge>}</h1>
         <p>{prestador.biografia || 'Profissional cadastrado no Gera.'}</p>
         <div className="prestador-publico__meta">
           <span>Membro desde {date.format(new Date(prestador.desde))}</span>

@@ -148,6 +148,21 @@ public sealed class AdminService(IAppDbContext db, UserManager<Usuario> users, I
         await transaction.CommitAsync(ct);
     }
 
+    public async Task AlterarVerificacaoAsync(int adminId, int usuarioId, VerificarUsuarioRequest request, CancellationToken ct)
+    {
+        var motivo = request.Motivo?.Trim() ?? "";
+        if (motivo.Length is < 3 or > 1000) throw new DomainException("Registre uma justificativa de validação entre 3 e 1.000 caracteres.");
+        if (adminId == usuarioId) throw new DomainException("Você não pode conceder ou remover o próprio selo.");
+        await using var transaction = await db.BeginTransactionAsync(IsolationLevel.ReadCommitted, ct);
+        var usuario = await users.FindByIdAsync(usuarioId.ToString()) ?? throw new NotFoundException("Usuário", usuarioId);
+        if (usuario.Verificado == request.Verificado) { await transaction.CommitAsync(ct); return; }
+        usuario.Verificado = request.Verificado;
+        usuario.AtualizadoEm = DateTime.UtcNow;
+        Registrar(adminId, request.Verificado ? "VerificarUsuario" : "RemoverVerificacaoUsuario", "Usuario", usuarioId, motivo);
+        await db.SaveChangesAsync(ct);
+        await transaction.CommitAsync(ct);
+    }
+
     public async Task ModerarOfertaAsync(int adminId, int ofertaId, ModerarOfertaRequest request, CancellationToken ct)
     {
         var motivo = request.Motivo?.Trim() ?? "";

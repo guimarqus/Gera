@@ -87,3 +87,7 @@ Consulte [avaliacoes, denuncias e bloqueios](docs/ETAPA-9-AVALIACOES-CONFIANCA.m
 ## Etapa 10: administracao
 
 Consulte [moderacao, categorias e auditoria](docs/ETAPA-10-ADMINISTRACAO.md).
+
+## Etapa 11: pagamentos, verificacao e e-mail
+
+Consulte [status da etapa](docs/ETAPA-11-PAGAMENTOS-VERIFICACAO-EMAIL.md). Pagamentos aguardam a escolha do provedor e das regras comerciais.

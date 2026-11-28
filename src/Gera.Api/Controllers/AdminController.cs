@@ -59,6 +59,13 @@ public sealed class AdminController(AdminService admin) : ControllerBase
         return NoContent();
     }
 
+    [HttpPatch("usuarios/{id:int}/verificacao")]
+    public async Task<IActionResult> AlterarVerificacao(int id, VerificarUsuarioRequest request, CancellationToken ct)
+    {
+        await admin.AlterarVerificacaoAsync(AdminId, id, request, ct);
+        return NoContent();
+    }
+
     [HttpGet("auditorias")]
     public async Task<ActionResult<IReadOnlyList<AuditoriaAdminDto>>> Auditorias(int pagina = 1, int tamanho = 50, CancellationToken ct = default) =>
         Ok(await admin.AuditoriasAsync(pagina, tamanho, ct));

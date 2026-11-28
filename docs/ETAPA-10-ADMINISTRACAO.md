@@ -7,6 +7,7 @@
 - Ofertas podem ser retiradas do feed por moderação ou reativadas com justificativa.
 - Categorias podem ser criadas e editadas, incluindo ativação, ordem e hierarquia. A exclusão é lógica para preservar relações históricas.
 - Contas podem ser suspensas ou reativadas. A suspensão revoga refresh tokens e a API rejeita imediatamente access tokens de contas inativas.
+- Administradores podem conceder ou remover o selo de verificação com justificativa auditada, após revisão manual de evidência em processo seguro externo. O sistema não armazena cópias de documentos de identidade.
 - Cada operação administrativa cria um registro na tabela `AuditoriasAdmin` na mesma transação da alteração.
 
 ## Acesso e provisionamento

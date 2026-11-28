@@ -103,6 +103,7 @@ export const api = {
   adminEditarCategoria: (id, body) => request(`/admin/categorias/${id}`, { method: 'PUT', body: json(body) }),
   adminUsuarios: (busca = '') => request(`/admin/usuarios?${new URLSearchParams({ busca })}`),
   adminAlterarUsuario: (id, body) => request(`/admin/usuarios/${id}/status`, { method: 'PATCH', body: json(body) }),
+  adminVerificarUsuario: (id, body) => request(`/admin/usuarios/${id}/verificacao`, { method: 'PATCH', body: json(body) }),
   adminAuditorias: () => request('/admin/auditorias'),
   forgotPassword: body => request('/auth/esqueci-senha', { method: 'POST', body: json(body) }, false),
   resetPassword: body => request('/auth/redefinir-senha', { method: 'POST', body: json(body) }, false),

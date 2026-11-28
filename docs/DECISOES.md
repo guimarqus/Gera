@@ -119,3 +119,7 @@ Os fluxos de avaliacao, denuncia e bloqueio reutilizam as entidades e constraint
 ## ADR 010: Autorizacao e auditoria administrativa
 
 O papel Administrador e provisionado pelo operador do banco, nunca pelo cadastro publico. A autorizacao verifica membership no Identity e conta ativa. Suspensoes revogam refresh tokens; a validacao JWT consulta o estado ativo em cada requisicao. Acoes administrativas escrevem na tabela AuditoriasAdmin na mesma transacao da alteracao. Consulte docs/ETAPA-10-ADMINISTRACAO.md.
+
+## ADR 011: SMTP e verificacao manual
+
+Production usa SMTP TLS configurado fora do repositorio e falha no startup se a configuracao estiver ausente ou invalida. Falhas de envio de recuperacao mantem a resposta generica e logs sem email ou token. O selo de verificacao exige decisao administrativa com justificativa auditada; evidencias sao conferidas por processo seguro externo e nao sao armazenadas. Pagamentos aguardam provedor e regras comerciais. Consulte docs/ETAPA-11-PAGAMENTOS-VERIFICACAO-EMAIL.md.

@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 using System.Text;
 
 namespace Gera.Application.Auth;
@@ -15,7 +16,8 @@ public sealed class AuthService(
     ITokenService tokenService,
     IEmailSender emailSender,
     IConfiguration configuration,
-    IMemoryCache cache) : IAuthService
+    IMemoryCache cache,
+    ILogger<AuthService> logger) : IAuthService
 {
     private static readonly SemaphoreSlim RefreshSync = new(1, 1);
     private readonly int _refreshTokenDays = int.TryParse(configuration["JwtSettings:RefreshTokenExpirationInDays"], out var days) ? Math.Clamp(days, 1, 30) : 7;
@@ -95,7 +97,9 @@ public sealed class AuthService(
         var encoded = Base64UrlToken.Encode(token);
         var origin = configuration["Frontend:Origin"] ?? "http://localhost:5173";
         var link = $"{origin}/redefinir-senha?email={Uri.EscapeDataString(user.Email!)}&token={Uri.EscapeDataString(encoded)}";
-        await emailSender.SendPasswordResetAsync(user.Email!, link, cancellationToken);
+        try { await emailSender.SendPasswordResetAsync(user.Email!, link, cancellationToken); }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
+        catch (Exception ex) { logger.LogError(ex, "Falha ao enviar e-mail de redefinição de senha."); }
     }
 
     public async Task<bool> ResetPasswordAsync(ResetPasswordRequest request, CancellationToken cancellationToken = default)

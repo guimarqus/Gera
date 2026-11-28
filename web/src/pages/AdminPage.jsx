@@ -22,6 +22,7 @@ export default function AdminPage() {
   const categoryAction = useMutation({ mutationFn: ({ id, data }) => api.adminEditarCategoria(id, data), onSuccess: invalidate });
   const createCategory = useMutation({ mutationFn: () => api.adminCriarCategoria({ ...categoria, categoriaPaiId: categoria.categoriaPaiId ? Number(categoria.categoriaPaiId) : null, ordem: Number(categoria.ordem) }), onSuccess: () => { setCategoria({ nome: '', descricao: '', icone: '', ordem: 0, categoriaPaiId: null, ativo: true }); invalidate(); } });
   const userAction = useMutation({ mutationFn: ({ user, motivo }) => api.adminAlterarUsuario(user.id, { ativo: !user.ativo, motivo }), onSuccess: invalidate });
+  const verificationAction = useMutation({ mutationFn: ({ user, motivo }) => api.adminVerificarUsuario(user.id, { verificado: !user.verificado, motivo }), onSuccess: invalidate });
   const failure = [resumo, reports, categories, users, audit].find(query => query.isError);
   if (failure) return <div className="page-content"><ErrorState title={failure.error.status === 403 ? 'Acesso restrito à administração' : 'Não foi possível carregar o painel'} onRetry={() => [resumo, reports, categories, users, audit].forEach(query => query.refetch())} /></div>;
   if ([resumo, reports, categories, users, audit].some(query => query.isPending)) return <div className="page-content"><Skeleton lines={8} /></div>;
@@ -33,6 +34,7 @@ export default function AdminPage() {
     {categoryAction.isError && <p role="alert">{categoryAction.error.message}</p>}
     {createCategory.isError && <p role="alert">{createCategory.error.message}</p>}
     {userAction.isError && <p role="alert">{userAction.error.message}</p>}
+    {verificationAction.isError && <p role="alert">{verificationAction.error.message}</p>}
     <section className="admin-stats" aria-label="Indicadores">
       {Object.entries({ 'Usuários ativos': resumo.data.usuariosAtivos, 'Ofertas ativas': resumo.data.ofertasAtivas, 'Denúncias pendentes': resumo.data.denunciasPendentes, 'Solicitações abertas': resumo.data.solicitacoesAbertas }).map(([label, value]) => <Card key={label}><span>{label}</span><strong>{value}</strong></Card>)}
     </section>
@@ -74,7 +76,8 @@ export default function AdminPage() {
       <div className="admin-list">{users.data.map(user => {
         const reason = pareceres[`user-${user.id}`] || '';
         return <Card key={user.id} className="admin-user"><div><strong>{user.nome}</strong><span>{user.email}</span></div>
-          <label>Motivo<input minLength={3} maxLength={1000} value={reason} onChange={event => setPareceres(current => ({ ...current, [`user-${user.id}`]: event.target.value }))} /></label>
+          <label>Motivo/referência interna (sem dados de documentos)<input minLength={3} maxLength={1000} value={reason} onChange={event => setPareceres(current => ({ ...current, [`user-${user.id}`]: event.target.value }))} /></label>
+          <Button variant="secondary" disabled={verificationAction.isPending || reason.trim().length < 3} onClick={() => { if (window.confirm(user.verificado ? `Remover o selo de ${user.nome}?` : `Confirmar que a validação de ${user.nome} foi concluída?`)) verificationAction.mutate({ user, motivo: reason }); }}>{user.verificado ? 'Remover selo verificado' : 'Marcar verificado'}</Button>
           <Button variant={user.ativo ? 'secondary' : 'primary'} disabled={userAction.isPending || reason.trim().length < 3} onClick={() => { if (!user.ativo || window.confirm(`Suspender a conta de ${user.nome}?`)) userAction.mutate({ user, motivo: reason }); }}>{user.ativo ? 'Suspender' : 'Reativar'}</Button>
         </Card>;
       })}</div>

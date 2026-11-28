@@ -44,14 +44,15 @@ it('exibe o perfil público e liga as ofertas aos detalhes', async () => {
   api.bloqueios.mockResolvedValue([]);
   api.prestador.mockResolvedValue({
     id: 9, nome: 'Ana Souza', fotoUrl: null, biografia: 'Pintora residencial.',
-    desde: '2025-01-01T00:00:00Z', notaMedia: 4.5, totalAvaliacoes: 2,
+    desde: '2025-01-01T00:00:00Z', verificado: true, notaMedia: 4.5, totalAvaliacoes: 2,
     totalOfertas: 1, pagina: 1, tamanho: 12, totalPaginas: 1,
     ofertas: [{ id: 42, categoriaId: 4, categoria: 'Pintura', titulo: 'Pintura de parede',
       descricao: 'Pintura residencial.', tipoPreco: 5, valor: null, cidade: 'Manaus',
       bairro: 'Centro', fotoCapaUrl: '/capa-mini.webp', publicadoEm: '2026-11-01T00:00:00Z' }],
   });
   renderRoute('/prestadores/9', '/prestadores/:id', <PrestadorPublicPage />);
-  expect(await screen.findByRole('heading', { name: 'Ana Souza' })).toBeInTheDocument();
+  expect(await screen.findByRole('heading', { name: /Ana Souza/ })).toBeInTheDocument();
+  expect(screen.getByText('Verificado')).toBeInTheDocument();
   expect(screen.getByText('4,5 (2 avaliações)')).toBeInTheDocument();
   expect(screen.getByRole('link', { name: 'Pintura de parede' })).toHaveAttribute('href', '/ofertas/42');
 });

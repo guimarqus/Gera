@@ -23,6 +23,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Gera.Application\Gera.Application.csproj" />
     <ProjectReference Include="..\..\src\Gera.Domain\Gera.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Gera.Infrastructure\Gera.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

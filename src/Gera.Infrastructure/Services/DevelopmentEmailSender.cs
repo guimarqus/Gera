@@ -7,7 +7,7 @@ public sealed class DevelopmentEmailSender(ILogger<DevelopmentEmailSender> logge
 {
     public Task SendPasswordResetAsync(string email, string resetLink, CancellationToken cancellationToken = default)
     {
-        logger.LogInformation("Link de redefinição de senha para {Email}: {ResetLink}", email, resetLink);
+        logger.LogWarning("Redefinição solicitada, mas o e-mail SMTP não está configurado. Nenhum link foi enviado.");
         return Task.CompletedTask;
     }
 }
