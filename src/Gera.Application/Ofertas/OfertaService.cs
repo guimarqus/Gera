@@ -49,6 +49,25 @@ public sealed class OfertaService(
             LerCaracteristicas(oferta), LerTags(oferta));
     }
 
+    public async Task<OfertaDetalhePublicoDto> ObterDetalhesPublicosAsync(int id, CancellationToken ct)
+    {
+        var oferta = await Existentes().AsNoTracking()
+            .Include(item => item.Categoria).Include(item => item.Prestador)
+            .Include(item => item.Tags).Include(item => item.Fotos)
+            .SingleOrDefaultAsync(item => item.Id == id && item.Status == StatusOferta.Ativo &&
+                item.Categoria != null && item.Categoria.Ativo && item.Prestador.Ativo, ct)
+            ?? throw new NotFoundException("Oferta não encontrada.");
+
+        return new OfertaDetalhePublicoDto(
+            oferta.Id, oferta.CategoriaId!.Value, oferta.Categoria!.Nome, oferta.Titulo, oferta.Descricao,
+            oferta.TipoPreco, oferta.Valor, oferta.Cidade, oferta.Bairro, oferta.RaioKm,
+            oferta.Disponibilidade, oferta.FormasPagamento, LerCaracteristicas(oferta), LerTags(oferta),
+            oferta.Fotos.OrderByDescending(foto => foto.EhCapa).ThenBy(foto => foto.Ordem)
+                .Select(foto => new FotoOfertaPublicaDto(foto.Url, foto.UrlMiniatura, foto.Ordem, foto.EhCapa)).ToArray(),
+            oferta.PrestadorId, oferta.Prestador.Nome, oferta.Prestador.FotoUrl,
+            oferta.Prestador.Biografia, oferta.Prestador.CriadoEm);
+    }
+
     public async Task<OfertaPrivadaDto> EditarAsync(int id, int usuarioId, EditarOfertaRequest dados, CancellationToken ct)
     {
         var oferta = await ProprietariaAsync(id, usuarioId, ct);

@@ -17,7 +17,7 @@ it('carrega o feed, envia filtros e permite salvar um favorito', async () => {
   api.feedOfertas.mockResolvedValue({
     pagina: 1, tamanho: 12, total: 1, totalPaginas: 1,
     ofertas: [{ id: 42, categoriaId: 8, categoria: 'Elétrica', titulo: 'Instalação elétrica',
-      descricao: 'Instalação e manutenção residencial.', tipoPreco: 5, valor: null, cidade: 'Manaus',
+      descricao: 'Instalação e manutenção residencial.', tipoPreco: 5, valor: null, cidade: 'Manaus', prestadorId: 9,
       bairro: 'Centro', fotoCapaUrl: null, prestador: 'Ana Souza', totalAvaliacoes: 0,
       distanciaKm: null, ehFavorita: false }],
   });

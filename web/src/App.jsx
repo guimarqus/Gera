@@ -10,6 +10,8 @@ const RegisterPage = lazy(() => import('./pages/AuthPages.jsx').then(m => ({ def
 const ForgotPasswordPage = lazy(() => import('./pages/AuthPages.jsx').then(m => ({ default: m.ForgotPasswordPage })));
 const ResetPasswordPage = lazy(() => import('./pages/AuthPages.jsx').then(m => ({ default: m.ResetPasswordPage })));
 const HomePage = lazy(() => import('./pages/HomePage.jsx'));
+const OfertaDetailPage = lazy(() => import('./pages/OfertaDetailPage.jsx'));
+const PrestadorPublicPage = lazy(() => import('./pages/PrestadorPublicPage.jsx'));
 const CategoriesPage = lazy(() => import('./pages/CategoriesPage.jsx'));
 const CategoryDetailPage = lazy(() => import('./pages/CategoryDetailPage.jsx'));
 const WorkerPage = lazy(() => import('./pages/WorkerPage.jsx'));
@@ -29,6 +31,8 @@ export default function App() {
     <Route path="/redefinir-senha" element={<ResetPasswordPage />} />
     <Route element={<ProtectedRoute />}><Route element={<AppShell />}>
       <Route path="/" element={<HomePage />} />
+      <Route path="/ofertas/:id" element={<OfertaDetailPage />} />
+      <Route path="/prestadores/:id" element={<PrestadorPublicPage />} />
       <Route path="/categorias" element={<CategoriesPage />} />
       <Route path="/categorias/:id" element={<CategoryDetailPage />} />
       <Route path="/trabalhador" element={<WorkerPage />} />

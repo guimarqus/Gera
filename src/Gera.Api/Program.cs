@@ -36,6 +36,7 @@ builder.Services.AddOptions<Gera.Application.Ofertas.OfertaOptions>()
     .Validate(options => options.LimiteAtivasPorUsuario > 0, "O limite de ofertas ativas deve ser positivo.")
     .ValidateOnStart();
 builder.Services.AddScoped<IProfileSummaryService, ProfileSummaryService>();
+builder.Services.AddScoped<PrestadorPublicoService>();
 builder.Services.AddSingleton<ITokenService, TokenService>();
 builder.Services.AddScoped<IEmailSender>(provider => builder.Environment.IsDevelopment()
     ? ActivatorUtilities.CreateInstance<DevelopmentEmailSender>(provider)

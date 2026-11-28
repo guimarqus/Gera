@@ -71,6 +71,18 @@ public sealed class OfertaRascunhoTests
         feed!.Ofertas.Should().ContainSingle(oferta => oferta.Id == rascunho.Id && oferta.DistanciaKm == 0);
         feed.Ofertas[0].FotoCapaUrl.Should().Be(fotosComCapa.Fotos.Single(foto => foto.EhCapa).UrlMiniatura);
         feed.Ofertas[0].EhFavorita.Should().BeFalse();
+
+        using var visitanteAnonimo = factory.CreateClient();
+        var detalhe = await visitanteAnonimo.GetFromJsonAsync<OfertaDetalhePublicoDto>($"{url}/detalhes");
+        detalhe!.PrestadorId.Should().Be(feed.Ofertas[0].PrestadorId);
+        detalhe.Categoria.Should().Be("Pintura Residencial Interna");
+        detalhe.Fotos.Should().ContainSingle(foto => foto.EhCapa);
+        var detalheJson = await visitanteAnonimo.GetStringAsync($"{url}/detalhes");
+        detalheJson.Should().NotContain("latitude").And.NotContain("longitude").And.NotContain("email").And.NotContain("telefone");
+        var perfilPublico = await visitanteAnonimo.GetFromJsonAsync<PrestadorPublicoDto>($"/api/prestadores/{detalhe.PrestadorId}");
+        perfilPublico!.TotalOfertas.Should().Be(1);
+        perfilPublico.Ofertas.Should().ContainSingle(oferta => oferta.Id == rascunho.Id);
+
         var feedJson = await visitante.GetStringAsync("/api/ofertas/feed?busca=Pintura&cidade=Centro");
         feedJson.Should().NotContain("latitude").And.NotContain("longitude");
 
@@ -119,6 +131,7 @@ public sealed class OfertaRascunhoTests
         var retomado = await proprietario.GetFromJsonAsync<OfertaPrivadaDto>(url);
         retomado!.Caracteristicas!.Atributos.Should().Contain("tipoObra", "Residencial");
         retomado.Tags.Should().Equal("Reforma");
+        (await visitante.GetAsync($"{url}/detalhes")).StatusCode.Should().Be(HttpStatusCode.NotFound);
         (await proprietario.DeleteAsync(url)).StatusCode.Should().Be(HttpStatusCode.NoContent);
         (await proprietario.GetAsync(url)).StatusCode.Should().Be(HttpStatusCode.NotFound);
     }

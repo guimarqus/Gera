@@ -38,6 +38,15 @@ public sealed record OfertaPublicaDto(
     decimal? Valor, string? Cidade, string? Bairro, string? Disponibilidade,
     CaracteristicasOferta? Caracteristicas, IReadOnlyList<string> Tags);
 
+public sealed record FotoOfertaPublicaDto(string Url, string? UrlMiniatura, int Ordem, bool EhCapa);
+
+public sealed record OfertaDetalhePublicoDto(
+    int Id, int CategoriaId, string Categoria, string Titulo, string Descricao, TipoPreco? TipoPreco,
+    decimal? Valor, string? Cidade, string? Bairro, int RaioKm, string? Disponibilidade,
+    string? FormasPagamento, CaracteristicasOferta? Caracteristicas, IReadOnlyList<string> Tags,
+    IReadOnlyList<FotoOfertaPublicaDto> Fotos, int PrestadorId, string Prestador,
+    string? PrestadorFotoUrl, string? PrestadorBiografia, DateTime PrestadorDesde);
+
 public sealed class EditarOfertaValidator : AbstractValidator<EditarOfertaRequest>
 {
     public EditarOfertaValidator()

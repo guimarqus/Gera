@@ -107,3 +107,9 @@ O limite padrão para cada endereço IP é de 10 requisições por minuto nos en
 - Ordenações aceitas: `proximidade`, `recentes`, `menor-preco`, `maior-preco` e `melhor-avaliadas`. Sem coordenadas, proximidade usa data de publicação.
 - A página padrão contém 20 resultados e o máximo é 50. A resposta inclui total e quantidade de páginas. O feed aceita acesso anônimo; `ehFavorita` é personalizado quando há usuário autenticado.
 - `PUT /api/ofertas/{id}/favorito` salva uma oferta ativa para o usuário autenticado; repetir a chamada é seguro. `DELETE` desfaz o favorito e também é idempotente.
+
+### Detalhes da oferta e perfil público
+
+- `GET /api/ofertas/{id}/detalhes` retorna os dados de uma oferta ativa, fotos ordenadas, características, tags e um resumo público do prestador. Ofertas pausadas, excluídas, de categoria inativa ou de conta desativada retornam `404`.
+- `GET /api/prestadores/{id}?pagina=1&tamanho=12` retorna perfil público e ofertas ativas paginadas. Um perfil sem oferta ativa não é exposto. O limite de página é 50.
+- Esses contratos não incluem coordenadas, telefone, e-mail nem documento. A nota média e a quantidade são derivadas dos registros em `Avaliacoes`.

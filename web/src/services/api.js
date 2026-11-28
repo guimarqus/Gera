@@ -40,6 +40,8 @@ export const api = {
   profileSummary: () => request('/perfil/resumo'),
   categories: () => request('/categorias'),
   feedOfertas: filtros => request(`/ofertas/feed?${new URLSearchParams(Object.entries(filtros).filter(([, valor]) => valor !== '' && valor != null))}`),
+  ofertaDetalhe: id => request(`/ofertas/${id}/detalhes`),
+  prestador: (id, pagina = 1, tamanho = 12) => request(`/prestadores/${id}?${new URLSearchParams({ pagina, tamanho })}`),
   favoritarOferta: id => request(`/ofertas/${id}/favorito`, { method: 'PUT' }),
   desfavoritarOferta: id => request(`/ofertas/${id}/favorito`, { method: 'DELETE' }),
   modeloOferta: id => request(`/categorias/${id}/modelo-oferta`),

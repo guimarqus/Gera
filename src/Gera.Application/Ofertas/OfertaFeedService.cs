@@ -77,7 +77,7 @@ public sealed class OfertaFeedService(IAppDbContext db)
                 oferta.TipoPreco, oferta.Valor, oferta.Cidade, oferta.Bairro, oferta.Disponibilidade,
                 oferta.Fotos.OrderByDescending(foto => foto.EhCapa).ThenBy(foto => foto.Ordem)
                     .Select(foto => foto.UrlMiniatura ?? foto.Url).FirstOrDefault(),
-                oferta.Prestador.Nome, oferta.Prestador.FotoUrl,
+                oferta.PrestadorId, oferta.Prestador.Nome, oferta.Prestador.FotoUrl,
                 oferta.TotalAvaliacoes > 0 ? oferta.NotaMedia : null, oferta.TotalAvaliacoes,
                 localizacao == null ? null : Math.Round(oferta.Localizacao!.Distance(localizacao) / 1000d, 1),
                 usuarioId.HasValue && oferta.Favoritos.Any(favorito => favorito.UsuarioId == usuarioId.Value)))

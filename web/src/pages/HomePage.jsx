@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Heart, MapPin, Search, Star, Wrench } from 'lucide-react';
 import { useAuth } from '../auth/AuthContext.jsx';
@@ -118,8 +119,10 @@ export default function HomePage() {
       {feedQuery.data.ofertas.length ? <ul className="feed-lista">
         {feedQuery.data.ofertas.map(offer => <li key={offer.id}>
           <Card className="feed-card">
+            <Link className="feed-card__imagem-link" to={`/ofertas/${offer.id}`} aria-label={`Ver detalhes de ${offer.titulo}`}>
             {offer.fotoCapaUrl ? <img className="feed-card__foto" src={offer.fotoCapaUrl} alt={`Foto do serviço ${offer.titulo}`} loading="lazy" /> :
               <div className="feed-card__foto feed-card__foto--vazia" aria-hidden="true"><Wrench size={36} /></div>}
+            </Link>
             <div className="feed-card__corpo">
               <div className="feed-card__topo"><span className="feed-card__categoria">{offer.categoria}</span>
                 <Button variant="ghost" className="feed-favorito" disabled={favoritoMutation.isPending}
@@ -128,10 +131,12 @@ export default function HomePage() {
                   <Heart size={20} fill={offer.ehFavorita ? 'currentColor' : 'none'} aria-hidden="true" />
                 </Button>
               </div>
-              <h3>{offer.titulo}</h3>
+              <h3><Link to={`/ofertas/${offer.id}`}>{offer.titulo}</Link></h3>
               <p className="feed-card__descricao">{offer.descricao}</p>
-              <div className="feed-card__prestador">{offer.prestadorFotoUrl && <img src={offer.prestadorFotoUrl} alt="" />}
-                <span>{offer.prestador}</span></div>
+              <Link className="feed-card__prestador" to={`/prestadores/${offer.prestadorId}`}>
+                {offer.prestadorFotoUrl && <img src={offer.prestadorFotoUrl} alt="" />}
+                <span>{offer.prestador}</span>
+              </Link>
               <div className="feed-card__detalhes">
                 <strong>{price(offer)}</strong>
                 <span>{[offer.bairro, offer.cidade, offer.distanciaKm != null && `${offer.distanciaKm.toLocaleString('pt-BR')} km`].filter(Boolean).join(' · ')}</span>

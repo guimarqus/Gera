@@ -20,6 +20,12 @@ public sealed class OfertasController(OfertaService ofertas, OfertaFeedService f
     public async Task<ActionResult<OfertaFeedPaginaDto>> Feed([FromQuery] OfertaFeedFiltro filtros, CancellationToken ct) =>
         Ok(await feed.PesquisarAsync(filtros, UsuarioId, ct));
 
+    [AllowAnonymous]
+    [HttpGet("{id:int}/detalhes")]
+    [EnableRateLimiting("feed-ofertas")]
+    public async Task<ActionResult<OfertaDetalhePublicoDto>> DetalhesPublicos(int id, CancellationToken ct) =>
+        Ok(await ofertas.ObterDetalhesPublicosAsync(id, ct));
+
     [HttpPut("{id:int}/favorito")]
     public async Task<IActionResult> Favoritar(int id, CancellationToken ct)
     {

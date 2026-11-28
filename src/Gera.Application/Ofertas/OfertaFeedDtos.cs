@@ -21,7 +21,7 @@ public sealed class OfertaFeedFiltro
 public sealed record OfertaFeedDto(
     int Id, int? CategoriaId, string Categoria, string Titulo, string Descricao,
     Gera.Domain.Enums.TipoPreco? TipoPreco, decimal? Valor, string? Cidade, string? Bairro,
-    string? Disponibilidade, string? FotoCapaUrl, string Prestador, string? PrestadorFotoUrl,
+    string? Disponibilidade, string? FotoCapaUrl, int PrestadorId, string Prestador, string? PrestadorFotoUrl,
     double? NotaMedia, int TotalAvaliacoes, double? DistanciaKm, bool EhFavorita);
 
 public sealed record OfertaFeedPaginaDto(
