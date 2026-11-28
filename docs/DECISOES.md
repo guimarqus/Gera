@@ -101,12 +101,10 @@ O sender de desenvolvimento apenas registra o link de recuperacao no log. **O en
 
 ## ADR 007 - Validacao do esquema espacial em SQL Server
 
-**Status:** implementado para bancos novos, com validacao em SQL Server pendente.
+**Status:** parcialmente validado em banco SQL Server LocalDB de teste.
 
-A migration `20261107211323_InitialCreate` gera `CREATE INDEX` sobre a coluna `Ofertas.Localizacao`, do tipo `geography`. O nome `SPATIAL_IX_Ofertas_Localizacao` sozinho nao cria um indice espacial.
+A migration `20261107211323_InitialCreate` gera `CREATE SPATIAL INDEX` sobre a coluna `Ofertas.Localizacao`, do tipo `geography`. O nome `SPATIAL_IX_Ofertas_Localizacao` sozinho nao cria um indice espacial.
 
-O caminho de instalacao limpa usa `CREATE SPATIAL INDEX` na migration inicial. A escolha entre corrigir a migration inicial e adicionar uma migration de correcao depende do historico dos bancos existentes. Uma correcao apenas posterior deixa de atender a uma instalacao limpa se o SQL Server rejeitar a instrucao inicial antes de alcancar a nova migration.
+A suite de integracao foi executada nesta sessao. Seu fixture aplica `Database.MigrateAsync()` em um catalogo LocalDB com nome aleatorio; os testes de oferta persistem coordenadas e o teste de categorias confirma o seed. Isso valida a instalacao limpa e a gravacao espacial no banco de teste.
 
-Validar em SQL Server isolado a instalacao desde a primeira migration, o caminho de atualizacao quando aplicavel, a presenca do indice em `sys.spatial_indexes` e a persistencia de um ponto com SRID 4326.
-
-A validacao esta bloqueada nesta sessao. O LocalDB 17.0 falha ao acessar a configuracao da instancia no registro do Windows, inclusive ao criar uma instancia de teste separada. O historico de migrations permanece desconhecido. Para rodar a suite contra outra instancia de teste, defina `GeraTest__SqlServer` com a conexao dessa instancia. O fixture cria um banco isolado com nome gerado.
+A inspecao direta de `sys.spatial_indexes`, do SRID persistido e do historico de um banco de desenvolvimento persistente continua pendente. A consulta manual via `sqlcmd` falhou na negociacao TLS do ODBC 17. Para usar outra instancia de teste, configure `GeraTest__SqlServer`; o fixture continua isolando o catalogo.

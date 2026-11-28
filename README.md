@@ -64,6 +64,8 @@ npm run build
 
 Os detalhes dos endpoints estão em [docs/API.md](docs/API.md); as políticas em [docs/REGRAS-DE-NEGOCIO.md](docs/REGRAS-DE-NEGOCIO.md); a decisão de armazenamento de tokens em [docs/DECISOES.md](docs/DECISOES.md).
 
+Consulte também [a arquitetura](docs/ARQUITETURA.md), [o banco de dados e migrations](docs/BANCO-DE-DADOS.md), [o guia de contribuição](docs/GUIA-DE-CONTRIBUICAO.md), [as instruções de deploy](docs/DEPLOY.md) e o [changelog](CHANGELOG.md).
+
 ## Etapa 3: interface e sessoes
 
 O React usa tokens/componentes em `web/src/design`, layout e rotas em `web/src/layout` e `web/src/routing`; o mapa esta em [docs/FRONTEND.md](docs/FRONTEND.md). As paginas de servicos ainda usam conteudo provisório, exceto Categorias, que consulta `GET /api/categorias`.
