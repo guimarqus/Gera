@@ -44,6 +44,7 @@ export const api = {
   me: () => request('/auth/eu'),
   profileSummary: () => request('/perfil/resumo'),
   categories: () => request('/categorias'),
+  diagnosticarProblema: body => request('/assistente/diagnostico', { method: 'POST', body: json(body) }),
   feedOfertas: filtros => request(`/ofertas/feed?${new URLSearchParams(Object.entries(filtros).filter(([, valor]) => valor !== '' && valor != null))}`),
   ofertaDetalhe: id => request(`/ofertas/${id}/detalhes`),
   prestador: (id, pagina = 1, tamanho = 12) => request(`/prestadores/${id}?${new URLSearchParams({ pagina, tamanho })}`),

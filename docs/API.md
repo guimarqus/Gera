@@ -60,7 +60,7 @@ Use `credentials: include` para refresh e logout. Tokens de acesso duram 15 minu
 - `POST /auth/esqueci-senha` com `{ "email": "maria@example.com" }`. Sempre retorna a mesma mensagem, independentemente da existência da conta. No ambiente de desenvolvimento, o link de redefinição é escrito no log da API.
 - `POST /auth/redefinir-senha` com `{ "email": "maria@example.com", "token": "token-recebido", "novaSenha": "NovaSenha123" }`.
 
-Fora de Development, o sender atual não envia mensagens; conecte um provedor de e-mail antes de habilitar recuperação em produção.
+O envio usa SMTP TLS configurado pelo ambiente. Consulte [Etapa 11](ETAPA-11-PAGAMENTOS-VERIFICACAO-EMAIL.md) para as variáveis e o comportamento em desenvolvimento.
 
 O limite padrão para cada endereço IP é de 10 requisições por minuto nos endpoints de autenticação; novas tentativas recebem `429`.
 
@@ -107,6 +107,15 @@ O limite padrão para cada endereço IP é de 10 requisições por minuto nos en
 - Ordenações aceitas: `proximidade`, `recentes`, `menor-preco`, `maior-preco` e `melhor-avaliadas`. Sem coordenadas, proximidade usa data de publicação.
 - A página padrão contém 20 resultados e o máximo é 50. A resposta inclui total e quantidade de páginas. O feed aceita acesso anônimo; `ehFavorita` é personalizado quando há usuário autenticado.
 - `PUT /api/ofertas/{id}/favorito` salva uma oferta ativa para o usuário autenticado; repetir a chamada é seguro. `DELETE` desfaz o favorito e também é idempotente.
+
+### Assistente de diagnóstico
+
+- `POST /api/assistente/diagnostico` exige autenticação e consentimento explícito. Recebe `{ "problema": "...", "cidade": "Manaus", "consentiuCompartilhamento": true }`. A descrição aceita até 2.000 caracteres; a cidade é usada somente na busca interna de ofertas.
+- O assistente envia ao OpenAI apenas a descrição e nomes/IDs de categorias ativas. Não envia cidade, conta, localização precisa ou histórico; a chamada usa `store: false`. O provedor ainda pode processar dados conforme as configurações e políticas aplicáveis à conta.
+- Respostas contêm resumo, até três categorias validadas contra o catálogo, sequência sugerida, aviso de cautela determinístico e até oito ofertas públicas reais. A IA não publica nem altera dados.
+- Limite atual: cinco análises por usuário por hora, em memória por instância. Em implantação com múltiplas instâncias, configure também limites de gasto no provedor e substitua o rate limit local por controle compartilhado.
+- O endpoint responde `503` quando a integração está desativada. Configure `Ai__OpenAI__Enabled=true`, `Ai__OpenAI__ApiKey` e `Ai__OpenAI__Model` por secrets/ambiente. O modelo é escolhido pela operação; não há chave nem chamada real no repositório.
+- A primeira versão aceita somente texto. Imagem e áudio continuam pendentes.
 
 ### Detalhes da oferta e perfil público
 

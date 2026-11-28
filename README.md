@@ -91,3 +91,7 @@ Consulte [moderacao, categorias e auditoria](docs/ETAPA-10-ADMINISTRACAO.md).
 ## Etapa 11: pagamentos, verificacao e e-mail
 
 Consulte [status da etapa](docs/ETAPA-11-PAGAMENTOS-VERIFICACAO-EMAIL.md). Pagamentos aguardam a escolha do provedor e das regras comerciais.
+
+## Etapa 12: assistente de diagnóstico
+
+Consulte [documentação e configuração](docs/ETAPA-12-ASSISTENTE-DIAGNOSTICO.md). O uso de IA permanece desativado até a configuração segura do provedor.

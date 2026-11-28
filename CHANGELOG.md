@@ -25,3 +25,7 @@ Consulte [documentação da Etapa 10](docs/ETAPA-10-ADMINISTRACAO.md).
 ## Etapa 11 — e-mail e verificação
 
 Consulte [documentação da Etapa 11](docs/ETAPA-11-PAGAMENTOS-VERIFICACAO-EMAIL.md). A integração de pagamentos segue pendente da escolha de provedor e regras comerciais.
+
+## Etapa 12 — assistente de diagnóstico
+
+Consulte [documentação da Etapa 12](docs/ETAPA-12-ASSISTENTE-DIAGNOSTICO.md). Integração com IA desativada por padrão, aguardando chave e modelo por ambiente.

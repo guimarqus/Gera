@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Bell, BriefcaseBusiness, ClipboardList, Grid2X2, House, LogOut, Menu, MessageCircle, Search, Settings, ShieldCheck, UserRound, X } from 'lucide-react';
+import { Bell, BriefcaseBusiness, ClipboardList, Grid2X2, House, LogOut, Menu, MessageCircle, Search, Settings, ShieldCheck, Sparkles, UserRound, X } from 'lucide-react';
 import { useAuth } from '../auth/AuthContext.jsx';
 import { Avatar, Badge, Button } from '../design/components.jsx';
 import './layout.css';
@@ -10,6 +10,7 @@ import { api, criarConexaoChat } from '../services/api.js';
 const navItems = [
   { to: '/', label: 'Início', icon: House, role: 'Cliente', end: true },
   { to: '/categorias', label: 'Categorias', icon: Grid2X2 },
+  { to: '/assistente', label: 'Ajuda para encontrar', icon: Sparkles },
   { to: '/trabalhador', label: 'Painel do Trabalhador', icon: BriefcaseBusiness, role: 'Prestador' },
   { to: '/mensagens', label: 'Mensagens', icon: MessageCircle, badge: '0' },
   { to: '/solicitacoes', label: 'Solicitações', icon: ClipboardList },

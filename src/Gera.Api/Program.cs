@@ -46,6 +46,17 @@ builder.Services.AddScoped<Gera.Application.Mensagens.NotificacaoService>();
 builder.Services.AddScoped<Gera.Application.Confianca.ConfiancaService>();
 builder.Services.AddScoped<Gera.Application.Admin.AdminService>();
 builder.Services.AddScoped<IAuthorizationHandler, AdministradorAuthorizationHandler>();
+builder.Services.AddOptions<OpenAiDiagnosticoOptions>().BindConfiguration("Ai:OpenAI")
+    .Validate(options => options.IsValid(), "Configure Ai:OpenAI:ApiKey e Ai:OpenAI:Model quando o assistente estiver habilitado.")
+    .ValidateOnStart();
+builder.Services.AddHttpClient<OpenAiDiagnosticoProvider>(client =>
+{
+    client.BaseAddress = new Uri("https://api.openai.com/v1/");
+    client.Timeout = TimeSpan.FromSeconds(25);
+});
+builder.Services.AddTransient<Gera.Application.Diagnostico.IAssistenteDiagnosticoProvider>(provider =>
+    provider.GetRequiredService<OpenAiDiagnosticoProvider>());
+builder.Services.AddScoped<Gera.Application.Diagnostico.AssistenteDiagnosticoService>();
 var smtpConfigurado = !string.IsNullOrWhiteSpace(builder.Configuration["Email:Smtp:Host"]);
 if (!builder.Environment.IsDevelopment() || smtpConfigurado)
     builder.Services.AddOptions<SmtpEmailOptions>().BindConfiguration("Email:Smtp")
@@ -115,6 +126,9 @@ builder.Services.AddRateLimiter(options =>
     options.AddPolicy("midia-chat", context => RateLimitPartition.GetFixedWindowLimiter(
         context.User.FindFirst("sub")?.Value ?? context.Connection.RemoteIpAddress?.ToString() ?? "ip-desconhecido",
         _ => new FixedWindowRateLimiterOptions { PermitLimit = 10, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
+    options.AddPolicy("assistente-diagnostico", context => RateLimitPartition.GetFixedWindowLimiter(
+        context.User.FindFirst("sub")?.Value ?? context.Connection.RemoteIpAddress?.ToString() ?? "ip-desconhecido",
+        _ => new FixedWindowRateLimiterOptions { PermitLimit = 5, Window = TimeSpan.FromHours(1), QueueLimit = 0 }));
     options.AddPolicy("chat-mensagens", context => RateLimitPartition.GetFixedWindowLimiter(
         context.User.FindFirst("sub")?.Value ?? context.Connection.RemoteIpAddress?.ToString() ?? "ip-desconhecido",
         _ => new FixedWindowRateLimiterOptions { PermitLimit = 30, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
@@ -188,8 +202,8 @@ app.UseCors("FrontendPolicy");
 
 app.UseHttpsRedirection();
 
-app.UseRateLimiter();
 app.UseAuthentication();
+app.UseRateLimiter();
 app.UseAuthorization();
 
 app.MapControllers();

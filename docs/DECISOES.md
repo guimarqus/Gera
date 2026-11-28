@@ -123,3 +123,7 @@ O papel Administrador e provisionado pelo operador do banco, nunca pelo cadastro
 ## ADR 011: SMTP e verificacao manual
 
 Production usa SMTP TLS configurado fora do repositorio e falha no startup se a configuracao estiver ausente ou invalida. Falhas de envio de recuperacao mantem a resposta generica e logs sem email ou token. O selo de verificacao exige decisao administrativa com justificativa auditada; evidencias sao conferidas por processo seguro externo e nao sao armazenadas. Pagamentos aguardam provedor e regras comerciais. Consulte docs/ETAPA-11-PAGAMENTOS-VERIFICACAO-EMAIL.md.
+
+## ADR 012: Assistente textual com OpenAI Responses
+
+O diagnóstico usa a API Responses com saída JSON Schema, chamada exclusivamente no backend e desativada por padrão. Só a descrição consentida e o catálogo de categorias são enviados; a busca de ofertas ocorre internamente. A integração não persiste a solicitação e usa `store: false`, sem presumir política de retenção do provedor. O limite local é cinco chamadas por usuário/hora e não representa teto financeiro global. Áudio e imagens ficam para outra entrega. Consulte docs/ETAPA-12-ASSISTENTE-DIAGNOSTICO.md.
