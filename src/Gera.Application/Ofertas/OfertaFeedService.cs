@@ -19,6 +19,11 @@ public sealed class OfertaFeedService(IAppDbContext db)
             oferta.Status == StatusOferta.Ativo && oferta.ExcluidoEm == null &&
             oferta.Categoria != null && oferta.Categoria.Ativo && oferta.Prestador.Ativo);
 
+        if (usuarioId is int viewerId)
+            query = query.Where(oferta => !db.Bloqueios.Any(b =>
+                (b.BloqueadorId == viewerId && b.BloqueadoId == oferta.PrestadorId) ||
+                (b.BloqueadorId == oferta.PrestadorId && b.BloqueadoId == viewerId)));
+
         if (filtro.CategoriaId is int categoriaId)
         {
             var categoriaIds = await db.Categorias.AsNoTracking()

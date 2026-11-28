@@ -108,3 +108,10 @@ A migration `20261107211323_InitialCreate` gera `CREATE SPATIAL INDEX` sobre a c
 A suite de integracao foi executada nesta sessao. Seu fixture aplica `Database.MigrateAsync()` em um catalogo LocalDB com nome aleatorio; os testes de oferta persistem coordenadas e o teste de categorias confirma o seed. Isso valida a instalacao limpa e a gravacao espacial no banco de teste.
 
 A inspecao direta de `sys.spatial_indexes`, do SRID persistido e do historico de um banco de desenvolvimento persistente continua pendente. A consulta manual via `sqlcmd` falhou na negociacao TLS do ODBC 17. Para usar outra instancia de teste, configure `GeraTest__SqlServer`; o fixture continua isolando o catalogo.
+
+
+## ADR 009: Fluxos de confianca
+
+**Status:** implementado; validacao integrada pendente no ambiente atual.
+
+Os fluxos de avaliacao, denuncia e bloqueio reutilizam as entidades e constraints existentes. As regras ficam centralizadas em ConfiancaService. Bloqueios ocultam ofertas para usuarios autenticados e impedem novas solicitacoes e interacoes de chat. Denuncias sao armazenadas para moderacao posterior, sem expor seu estado ao denunciante. Consulte docs/ETAPA-9-AVALIACOES-CONFIANCA.md para endpoints e limites.

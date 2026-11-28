@@ -21,9 +21,11 @@ export default function OfertaDetailPage() {
   const valido = /^[1-9]\d{0,9}$/.test(id || '');
   const [fotoUrl, setFotoUrl] = useState(null);
   const [descricao, setDescricao] = useState('');
+  const [motivoDenuncia, setMotivoDenuncia] = useState('');
   const queryClient = useQueryClient();
   const solicitacao = useMutation({ mutationFn: () => api.criarSolicitacao(id, descricao), onSuccess: () => { setDescricao(''); queryClient.invalidateQueries({ queryKey: ['minhas-solicitacoes'] }); } });
   const query = useQuery({ queryKey: ['oferta-detalhe', id], queryFn: () => api.ofertaDetalhe(id), enabled: valido });
+  const denuncia = useMutation({ mutationFn: () => api.denunciar({ tipoAlvo: 1, alvoId: Number(id), motivo: motivoDenuncia, descricao: null }), onSuccess: () => setMotivoDenuncia('') });
 
   if (!valido) return <div className="page-content public-detail"><EmptyState title="Oferta não encontrada" description="Confira o endereço ou volte para a busca." /></div>;
   if (query.isPending) return <div className="page-content public-detail"><Skeleton lines={7} /></div>;
@@ -55,6 +57,16 @@ export default function OfertaDetailPage() {
           {offer.tags.length > 0 && <div className="public-detail__tags" aria-label="Palavras-chave">{offer.tags.map(tag => <Badge key={tag}>{tag}</Badge>)}</div>}
         </Card>
       </section>
+      {user && String(user?.id) !== String(offer.prestadorId) && <Card className="public-detail__section">
+        <h2>Denunciar esta oferta</h2>
+        <form onSubmit={event => { event.preventDefault(); denuncia.mutate(); }}>
+          <label htmlFor="denuncia-motivo">Motivo</label>
+          <input id="denuncia-motivo" minLength={3} maxLength={150} required value={motivoDenuncia} onChange={event => setMotivoDenuncia(event.target.value)} />
+          {denuncia.isError && <p role="alert">{denuncia.error.message}</p>}
+          {denuncia.isSuccess && <p role="status">Denúncia enviada para análise.</p>}
+          <Button type="submit" variant="secondary" loading={denuncia.isPending}>Enviar denúncia</Button>
+        </form>
+      </Card>}
       <aside className="public-detail__aside">
         <Card className="public-detail__section"><span className="public-detail__rotulo">Preço</span><strong className="public-detail__preco">{showPrice(offer)}</strong>
           <div className="public-detail__fatos">

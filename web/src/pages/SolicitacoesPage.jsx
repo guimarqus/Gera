@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Badge, Button, Card, EmptyState, ErrorState, PageHeader, Skeleton } from '../design/components.jsx';
 import { useAuth } from '../auth/AuthContext.jsx';
 import { api } from '../services/api.js';
+import AvaliacaoSolicitacao from './AvaliacaoSolicitacao.jsx';
 import './solicitacoes.css';
 
 const colunas = [[1, 'Solicitações'], [2, 'Em negociação'], [3, 'Agendados'], [4, 'Em execução'], [5, 'Concluídos'], [6, 'Cancelados']];
@@ -64,6 +65,7 @@ export default function SolicitacoesPage() {
             {stage === 3 && ehPrestador && <Button disabled={mutation.isPending} onClick={() => mutation.mutate({ action: 'inicio', item })}>Iniciar serviço</Button>}
             {stage === 4 && ehPrestador && !item.concluidoPorPrestador && <Button disabled={mutation.isPending} onClick={() => mutation.mutate({ action: 'concluir', item })}>Solicitar conclusão</Button>}
             {stage === 4 && !ehPrestador && item.concluidoPorPrestador && <Button disabled={mutation.isPending} onClick={() => mutation.mutate({ action: 'confirmar', item })}>Confirmar conclusão</Button>}
+            {stage === 5 && <AvaliacaoSolicitacao item={item} />}
           </Card>;
         })}
       </section>)}

@@ -6,7 +6,7 @@ import OfertaDetailPage from '../pages/OfertaDetailPage.jsx';
 import PrestadorPublicPage from '../pages/PrestadorPublicPage.jsx';
 import { api } from '../services/api.js';
 
-vi.mock('../services/api.js', () => ({ api: { ofertaDetalhe: vi.fn(), prestador: vi.fn() } }));
+vi.mock('../services/api.js', () => ({ api: { ofertaDetalhe: vi.fn(), prestador: vi.fn(), avaliacoesPrestador: vi.fn(), bloqueios: vi.fn(), denunciar: vi.fn(), bloquear: vi.fn(), desbloquear: vi.fn() } }));
 vi.mock('../auth/AuthContext.jsx', () => ({ useAuth: () => ({ user: { id: 1 } }) }));
 afterEach(cleanup);
 
@@ -40,6 +40,8 @@ it('exibe detalhes públicos, galeria e link para o prestador', async () => {
 });
 
 it('exibe o perfil público e liga as ofertas aos detalhes', async () => {
+  api.avaliacoesPrestador.mockResolvedValue([]);
+  api.bloqueios.mockResolvedValue([]);
   api.prestador.mockResolvedValue({
     id: 9, nome: 'Ana Souza', fotoUrl: null, biografia: 'Pintora residencial.',
     desde: '2025-01-01T00:00:00Z', notaMedia: 4.5, totalAvaliacoes: 2,

@@ -40,6 +40,7 @@ builder.Services.AddScoped<PrestadorPublicoService>();
 builder.Services.AddScoped<Gera.Application.Solicitacoes.SolicitacaoService>();
 builder.Services.AddScoped<Gera.Application.Mensagens.MensagemService>();
 builder.Services.AddScoped<Gera.Application.Mensagens.NotificacaoService>();
+builder.Services.AddScoped<Gera.Application.Confianca.ConfiancaService>();
 builder.Services.AddSignalR();
 builder.Services.AddSingleton<ITokenService, TokenService>();
 builder.Services.AddScoped<IEmailSender>(provider => builder.Environment.IsDevelopment()

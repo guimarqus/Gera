@@ -9,7 +9,8 @@ namespace Gera.Application.Mensagens;
 public sealed class MensagemService(IAppDbContext db, IArmazenamentoChat midia)
 {
     public async Task<IReadOnlyList<ConversaDto>> ConversasAsync(int usuarioId, CancellationToken ct) =>
-        await db.Solicitacoes.AsNoTracking().Where(s => s.ClienteId == usuarioId || s.PrestadorId == usuarioId)
+        await db.Solicitacoes.AsNoTracking().Where(s => (s.ClienteId == usuarioId || s.PrestadorId == usuarioId) &&
+                !db.Bloqueios.Any(b => (b.BloqueadorId == s.ClienteId && b.BloqueadoId == s.PrestadorId) || (b.BloqueadorId == s.PrestadorId && b.BloqueadoId == s.ClienteId)))
             .OrderByDescending(s => s.Mensagens.OrderByDescending(m => m.Id).Select(m => (DateTime?)m.DataHora).FirstOrDefault()).Take(100)
             .Select(s => new ConversaDto(s.Id, s.Oferta.Titulo,
                 usuarioId == s.ClienteId ? s.PrestadorId : s.ClienteId,
@@ -47,7 +48,8 @@ public sealed class MensagemService(IAppDbContext db, IArmazenamentoChat midia)
     }
 
     public async Task<bool> PodeAcessarAsync(int usuarioId, int solicitacaoId, CancellationToken ct) =>
-        await db.Solicitacoes.AnyAsync(s => s.Id == solicitacaoId && (s.ClienteId == usuarioId || s.PrestadorId == usuarioId), ct);
+        await db.Solicitacoes.AnyAsync(s => s.Id == solicitacaoId && (s.ClienteId == usuarioId || s.PrestadorId == usuarioId) &&
+            !db.Bloqueios.Any(b => (b.BloqueadorId == s.ClienteId && b.BloqueadoId == s.PrestadorId) || (b.BloqueadorId == s.PrestadorId && b.BloqueadoId == s.ClienteId)), ct);
 
     public async Task<int> OutroParticipanteAsync(int usuarioId, int solicitacaoId, CancellationToken ct)
     {
@@ -66,7 +68,9 @@ public sealed class MensagemService(IAppDbContext db, IArmazenamentoChat midia)
     public async Task<(Stream Arquivo, string ContentType)> AbrirMidiaAsync(int usuarioId, Guid id, CancellationToken ct)
     {
         var url = await db.Mensagens.AsNoTracking().Where(m => m.MidiaUrl == $"/api/mensagens/midia/{id:N}" &&
-                (m.Solicitacao.ClienteId == usuarioId || m.Solicitacao.PrestadorId == usuarioId))
+                (m.Solicitacao.ClienteId == usuarioId || m.Solicitacao.PrestadorId == usuarioId) &&
+                !db.Bloqueios.Any(b => (b.BloqueadorId == m.Solicitacao.ClienteId && b.BloqueadoId == m.Solicitacao.PrestadorId) ||
+                    (b.BloqueadorId == m.Solicitacao.PrestadorId && b.BloqueadoId == m.Solicitacao.ClienteId)))
             .Select(m => m.MidiaUrl).SingleOrDefaultAsync(ct) ?? throw new NotFoundException("Mídia", id);
         return midia.Abrir(id) ?? throw new NotFoundException("Mídia", url);
     }
@@ -76,6 +80,9 @@ public sealed class MensagemService(IAppDbContext db, IArmazenamentoChat midia)
         var solicitacao = await db.Solicitacoes.Include(s => s.Cliente).Include(s => s.Prestador)
             .SingleOrDefaultAsync(s => s.Id == solicitacaoId && (s.ClienteId == usuarioId || s.PrestadorId == usuarioId), ct)
             ?? throw new NotFoundException("Solicitação", solicitacaoId);
+        if (await db.Bloqueios.AnyAsync(b => (b.BloqueadorId == solicitacao.ClienteId && b.BloqueadoId == solicitacao.PrestadorId) ||
+            (b.BloqueadorId == solicitacao.PrestadorId && b.BloqueadoId == solicitacao.ClienteId), ct))
+            throw new NotFoundException("Solicitação", solicitacaoId);
         var remetente = usuarioId == solicitacao.ClienteId ? solicitacao.Cliente : solicitacao.Prestador;
         var destinatario = usuarioId == solicitacao.ClienteId ? solicitacao.Prestador : solicitacao.Cliente;
         var message = new Mensagem { SolicitacaoId = solicitacaoId, RemetenteId = usuarioId, Tipo = tipo, Conteudo = conteudo, MidiaUrl = midiaUrl };

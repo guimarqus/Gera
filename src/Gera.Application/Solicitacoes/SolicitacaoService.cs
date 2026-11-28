@@ -15,6 +15,9 @@ public sealed class SolicitacaoService(IAppDbContext db)
         var oferta = await db.Ofertas.AsNoTracking().SingleOrDefaultAsync(o => o.Id == ofertaId && o.Status == StatusOferta.Ativo && o.ExcluidoEm == null, ct)
             ?? throw new NotFoundException("Oferta", ofertaId);
         if (oferta.PrestadorId == clienteId) throw new DomainException("Não é possível solicitar o próprio serviço.");
+        if (await db.Bloqueios.AnyAsync(b => (b.BloqueadorId == clienteId && b.BloqueadoId == oferta.PrestadorId) ||
+            (b.BloqueadorId == oferta.PrestadorId && b.BloqueadoId == clienteId), ct))
+            throw new NotFoundException("Oferta", ofertaId);
         var descricao = request.Descricao?.Trim() ?? "";
         if (descricao.Length is < 10 or > 2000) throw new DomainException("A descrição deve ter entre 10 e 2.000 caracteres.");
         var item = new Solicitacao { ClienteId = clienteId, PrestadorId = oferta.PrestadorId, OfertaId = ofertaId, Descricao = descricao };
@@ -136,7 +139,9 @@ public sealed class SolicitacaoService(IAppDbContext db)
         return await ObterAsync(usuarioId, id, ct);
     }
 
-    private IQueryable<Solicitacao> Base() => db.Solicitacoes.AsNoTracking()
+    private IQueryable<Solicitacao> Base() => db.Solicitacoes.AsNoTracking().Where(s =>
+            !db.Bloqueios.Any(b => (b.BloqueadorId == s.ClienteId && b.BloqueadoId == s.PrestadorId) ||
+                (b.BloqueadorId == s.PrestadorId && b.BloqueadoId == s.ClienteId)))
         .Include(s => s.Cliente).Include(s => s.Prestador).Include(s => s.Oferta)
         .Include(s => s.Orcamentos.OrderByDescending(o => o.CriadoEm)).Include(s => s.Historicos.OrderBy(h => h.OcorreuEm));
 
@@ -146,7 +151,9 @@ public sealed class SolicitacaoService(IAppDbContext db)
 
     private async Task<Solicitacao> ObterEntidadeAsync(int usuarioId, int id, string versao, CancellationToken ct)
     {
-        var item = await db.Solicitacoes.SingleOrDefaultAsync(s => s.Id == id && (s.ClienteId == usuarioId || s.PrestadorId == usuarioId), ct)
+        var item = await db.Solicitacoes.SingleOrDefaultAsync(s => s.Id == id && (s.ClienteId == usuarioId || s.PrestadorId == usuarioId) &&
+            !db.Bloqueios.Any(b => (b.BloqueadorId == s.ClienteId && b.BloqueadoId == s.PrestadorId) ||
+                (b.BloqueadorId == s.PrestadorId && b.BloqueadoId == s.ClienteId)), ct)
             ?? throw new NotFoundException("Solicitação", id);
         byte[] original;
         try { original = Convert.FromBase64String(versao); } catch (FormatException) { throw new DomainException("Versão da solicitação inválida. Atualize os dados."); }

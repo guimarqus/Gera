@@ -78,3 +78,8 @@ Na pasta `web`, use `npm run test` para os testes React (Vitest + Testing Librar
 ## Etapa 8: chat e notificacoes
 
 O chat por solicitacao, mensagens e notificacoes no aplicativo estao descritos em [docs/ETAPA-8-CHAT-NOTIFICACOES.md](docs/ETAPA-8-CHAT-NOTIFICACOES.md).
+
+
+## Etapa 9: confianca e reputacao
+
+Consulte [avaliacoes, denuncias e bloqueios](docs/ETAPA-9-AVALIACOES-CONFIANCA.md).

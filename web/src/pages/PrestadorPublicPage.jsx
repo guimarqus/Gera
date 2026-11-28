@@ -1,8 +1,9 @@
 import { Link, useParams, useSearchParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, BriefcaseBusiness, Star } from 'lucide-react';
 import { Avatar, Button, Card, EmptyState, ErrorState, Skeleton } from '../design/components.jsx';
 import { api } from '../services/api.js';
+import { useAuth } from '../auth/AuthContext.jsx';
 import './public-details.css';
 
 const money = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -16,12 +17,19 @@ function showPrice(offer) {
 
 export default function PrestadorPublicPage() {
   const { id } = useParams();
+  const { user } = useAuth();
   const valido = /^[1-9]\d{0,9}$/.test(id || '');
   const [params, setParams] = useSearchParams();
   const paginaSolicitada = Number(params.get('pagina'));
   const pagina = Number.isInteger(paginaSolicitada) && paginaSolicitada >= 1 && paginaSolicitada <= 1_000_000
     ? paginaSolicitada : 1;
   const query = useQuery({ queryKey: ['prestador-publico', id, pagina], queryFn: () => api.prestador(id, pagina), enabled: valido });
+  const reviews = useQuery({ queryKey: ['avaliacoes-prestador', id], queryFn: () => api.avaliacoesPrestador(id), enabled: valido });
+  const cache = useQueryClient();
+  const blockList = useQuery({ queryKey: ['bloqueios'], queryFn: api.bloqueios, enabled: Boolean(user) });
+  const blocked = (blockList.data || []).some(item => String(item.usuarioId) === String(id));
+  const blockAction = useMutation({ mutationFn: () => blocked ? api.desbloquear(id) : api.bloquear(id, null), onSuccess: () => cache.invalidateQueries({ queryKey: ['bloqueios'] }) });
+  const report = useMutation({ mutationFn: () => api.denunciar({ tipoAlvo: 2, alvoId: Number(id), motivo: 'Perfil inadequado', descricao: null }) });
 
   if (!valido) return <div className="page-content public-detail"><EmptyState title="Perfil não encontrado" description="Confira o endereço ou volte para a busca." /></div>;
   if (query.isPending) return <div className="page-content public-detail"><Skeleton lines={6} /></div>;
@@ -42,8 +50,26 @@ export default function PrestadorPublicPage() {
           {prestador.totalAvaliacoes > 0 && <span><Star size={16} fill="currentColor" aria-hidden="true" />
             {prestador.notaMedia.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} ({prestador.totalAvaliacoes} avaliações)</span>}
         </div>
+        {user && String(user.id ?? user.usuarioId) !== String(id) && <div className="kanban-acoes">
+          <Button variant="secondary" disabled={blockAction.isPending} onClick={() => blockAction.mutate()}>{blocked ? 'Desbloquear usuário' : 'Bloquear usuário'}</Button>
+          <Button variant="ghost" disabled={report.isPending || report.isSuccess} onClick={() => report.mutate()}>Denunciar perfil</Button>
+          {blockAction.isError && <p role="alert">{blockAction.error.message}</p>}
+          {report.isError && <p role="alert">{report.error.message}</p>}
+          {report.isSuccess && <p role="status">Denúncia enviada para análise.</p>}
+        </div>}
       </div>
     </header>
+    <section aria-labelledby="avaliacoes-titulo" className="public-detail__section">
+      <h2 id="avaliacoes-titulo">Avaliações</h2>
+      {reviews.isPending && <Skeleton lines={2} />}
+      {reviews.isError && <ErrorState title="Não foi possível carregar as avaliações" onRetry={reviews.refetch} />}
+      {reviews.data?.length === 0 && <p>Este profissional ainda não recebeu avaliações.</p>}
+      <ul>{(reviews.data || []).map(review => <li key={review.id}>
+        <p><Star size={15} fill="currentColor" aria-hidden="true" /> {review.nota}/5 · {review.avaliador}</p>
+        {review.comentario && <p>{review.comentario}</p>}
+        {review.resposta && <p><strong>Resposta do profissional:</strong> {review.resposta}</p>}
+      </li>)}</ul>
+    </section>
     <header className="prestador-publico__ofertas-heading"><h2>Serviços anunciados</h2><p>Ofertas ativas deste profissional.</p></header>
     {prestador.ofertas.length ? <ul className="prestador-ofertas">
       {prestador.ofertas.map(offer => <li key={offer.id}><Card className="prestador-oferta">
