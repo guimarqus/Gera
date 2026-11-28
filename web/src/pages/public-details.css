@@ -20,6 +20,7 @@
 .public-detail__fatos{display:grid;gap:var(--space-3);color:var(--color-text-secondary);line-height:1.5}
 .public-detail__fatos span{display:flex;align-items:flex-start;gap:var(--space-2)}
 .public-detail__prestador{display:grid;grid-template-columns:auto 1fr;align-items:start;gap:var(--space-4)}
+.pedido-form{display:grid;gap:var(--space-2);margin-top:var(--space-4)}.pedido-form label{font-weight:700}.pedido-form textarea{width:100%;padding:var(--space-3);border:1px solid var(--color-border);border-radius:var(--radius-sm);font:inherit;resize:vertical}.pedido-form p{margin:0;color:#B91C1C}
 .public-detail__prestador h2{margin:3px 0;font:700 1.05rem var(--font-heading)}
 .public-detail__prestador p{margin:var(--space-2) 0;line-height:1.5;color:var(--color-text-secondary)}
 .prestador-publico{display:grid;grid-template-columns:auto 1fr;align-items:start;gap:var(--space-5);margin:0 0 var(--space-8);padding:var(--space-6);border:1px solid var(--color-border);border-radius:var(--radius);background:white}

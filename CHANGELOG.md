@@ -1,5 +1,7 @@
 # Changelog
 
+Consulte [Etapa 7 — Solicitações](docs/ETAPA-7-SOLICITACOES.md) para regras e endpoints deste fluxo.
+
 Mudanças relevantes do Gera, organizadas por entrega.
 
 ## Não lançado

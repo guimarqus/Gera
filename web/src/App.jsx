@@ -15,6 +15,7 @@ const PrestadorPublicPage = lazy(() => import('./pages/PrestadorPublicPage.jsx')
 const CategoriesPage = lazy(() => import('./pages/CategoriesPage.jsx'));
 const CategoryDetailPage = lazy(() => import('./pages/CategoryDetailPage.jsx'));
 const WorkerPage = lazy(() => import('./pages/WorkerPage.jsx'));
+const SolicitacoesPage = lazy(() => import('./pages/SolicitacoesPage.jsx'));
 const OfertaEditorPage = lazy(() => import('./pages/OfertaEditorPage.jsx'));
 const NovaOfertaPage = lazy(() => import('./pages/NovaOfertaPage.jsx'));
 const MessagesPage = lazy(() => import('./pages/MessagesPage.jsx'));
@@ -36,6 +37,7 @@ export default function App() {
       <Route path="/categorias" element={<CategoriesPage />} />
       <Route path="/categorias/:id" element={<CategoryDetailPage />} />
       <Route path="/trabalhador" element={<WorkerPage />} />
+      <Route path="/solicitacoes" element={<SolicitacoesPage />} />
       <Route path="/trabalhador/ofertas/nova" element={<NovaOfertaPage />} />
       <Route path="/trabalhador/ofertas/:id" element={<OfertaEditorPage />} />
       <Route path="/mensagens" element={<MessagesPage />} />

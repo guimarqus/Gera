@@ -7,6 +7,7 @@ import PrestadorPublicPage from '../pages/PrestadorPublicPage.jsx';
 import { api } from '../services/api.js';
 
 vi.mock('../services/api.js', () => ({ api: { ofertaDetalhe: vi.fn(), prestador: vi.fn() } }));
+vi.mock('../auth/AuthContext.jsx', () => ({ useAuth: () => ({ user: { id: 1 } }) }));
 afterEach(cleanup);
 
 function renderRoute(path, route, element) {
@@ -32,6 +33,7 @@ it('exibe detalhes públicos, galeria e link para o prestador', async () => {
   expect(await screen.findByRole('heading', { name: 'Pintura de parede' })).toBeInTheDocument();
   expect(screen.getByText('Atende em até 20 km')).toBeInTheDocument();
   expect(screen.getByText('ambiente')).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Solicitar orçamento' })).toBeInTheDocument();
   expect(screen.getByRole('link', { name: 'Ver perfil e outros serviços' })).toHaveAttribute('href', '/prestadores/9');
   fireEvent.click(screen.getByRole('button', { name: 'Mostrar foto 2 de 2' }));
   expect(screen.getByRole('img', { name: 'Foto de Pintura de parede' })).toHaveAttribute('src', '/parede.webp');

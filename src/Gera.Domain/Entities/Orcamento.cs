@@ -12,6 +12,9 @@ public class Orcamento
     public int PrestadorId { get; set; }
     public Usuario Prestador { get; set; } = null!;
 
+    public int AutorId { get; set; }
+    public Usuario Autor { get; set; } = null!;
+
     public decimal Valor { get; set; }
     public int? PrazoEmDias { get; set; }
     public DateTime? DataPrevisao { get; set; }

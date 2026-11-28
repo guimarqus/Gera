@@ -1015,6 +1015,9 @@ namespace Gera.Infrastructure.Data.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<int>("AutorId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("CriadoEm")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("datetime2")
@@ -1052,6 +1055,8 @@ namespace Gera.Infrastructure.Data.Migrations
                         .HasColumnType("decimal(18,2)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("AutorId");
 
                     b.HasIndex("PrestadorId");
 
@@ -1704,6 +1709,12 @@ namespace Gera.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("Gera.Domain.Entities.Orcamento", b =>
                 {
+                    b.HasOne("Gera.Domain.Entities.Usuario", "Autor")
+                        .WithMany()
+                        .HasForeignKey("AutorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("Gera.Domain.Entities.Usuario", "Prestador")
                         .WithMany()
                         .HasForeignKey("PrestadorId")
@@ -1715,6 +1726,8 @@ namespace Gera.Infrastructure.Data.Migrations
                         .HasForeignKey("SolicitacaoId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Autor");
 
                     b.Navigation("Prestador");
 

@@ -36,6 +36,11 @@ public class OrcamentoConfiguration : IEntityTypeConfiguration<Orcamento>
             .HasForeignKey(o => o.PrestadorId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        builder.HasOne(o => o.Autor)
+            .WithMany()
+            .HasForeignKey(o => o.AutorId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         builder.HasIndex(o => new { o.SolicitacaoId, o.Status })
             .HasDatabaseName("IX_Orcamentos_SolicitacaoId_Status");
     }

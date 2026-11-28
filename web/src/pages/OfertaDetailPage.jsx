@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, MapPin, Star } from 'lucide-react';
-import { Avatar, Badge, Card, EmptyState, ErrorState, PageHeader, Skeleton } from '../design/components.jsx';
+import { Avatar, Badge, Button, Card, EmptyState, ErrorState, PageHeader, Skeleton } from '../design/components.jsx';
 import { api } from '../services/api.js';
+import { useAuth } from '../auth/AuthContext.jsx';
 import './public-details.css';
 
 const money = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -16,8 +17,12 @@ function showPrice(offer) {
 
 export default function OfertaDetailPage() {
   const { id } = useParams();
+  const { user } = useAuth();
   const valido = /^[1-9]\d{0,9}$/.test(id || '');
   const [fotoUrl, setFotoUrl] = useState(null);
+  const [descricao, setDescricao] = useState('');
+  const queryClient = useQueryClient();
+  const solicitacao = useMutation({ mutationFn: () => api.criarSolicitacao(id, descricao), onSuccess: () => { setDescricao(''); queryClient.invalidateQueries({ queryKey: ['minhas-solicitacoes'] }); } });
   const query = useQuery({ queryKey: ['oferta-detalhe', id], queryFn: () => api.ofertaDetalhe(id), enabled: valido });
 
   if (!valido) return <div className="page-content public-detail"><EmptyState title="Oferta não encontrada" description="Confira o endereço ou volte para a busca." /></div>;
@@ -58,6 +63,13 @@ export default function OfertaDetailPage() {
             {offer.disponibilidade && <span><strong>Disponibilidade:</strong> {offer.disponibilidade}</span>}
             {offer.formasPagamento && <span><strong>Formas de pagamento:</strong> {offer.formasPagamento}</span>}
           </div>
+          {String(user?.id) !== String(offer.prestadorId) && <form className="pedido-form" onSubmit={event => { event.preventDefault(); solicitacao.mutate(); }}>
+            <label htmlFor="solicitacao-descricao">Conte o que precisa ser feito</label>
+            <textarea id="solicitacao-descricao" value={descricao} onChange={event => setDescricao(event.target.value)} minLength={10} maxLength={2000} required rows={4} />
+            {solicitacao.isError && <p role="alert">{solicitacao.error.message}</p>}
+            {solicitacao.isSuccess && <p role="status">Solicitação enviada. Acompanhe em Solicitações.</p>}
+            <Button type="submit" loading={solicitacao.isPending}>Solicitar orçamento</Button>
+          </form>}
         </Card>
         <Card className="public-detail__prestador">
           <Link to={`/prestadores/${offer.prestadorId}`} aria-label={`Ver perfil de ${offer.prestador}`}>

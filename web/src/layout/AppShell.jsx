@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { Bell, BriefcaseBusiness, Grid2X2, House, LogOut, Menu, MessageCircle, Search, Settings, UserRound, X } from 'lucide-react';
+import { Bell, BriefcaseBusiness, ClipboardList, Grid2X2, House, LogOut, Menu, MessageCircle, Search, Settings, UserRound, X } from 'lucide-react';
 import { useAuth } from '../auth/AuthContext.jsx';
 import { Avatar, Badge, Button } from '../design/components.jsx';
 import './layout.css';
@@ -10,6 +10,7 @@ const navItems = [
   { to: '/categorias', label: 'Categorias', icon: Grid2X2 },
   { to: '/trabalhador', label: 'Painel do Trabalhador', icon: BriefcaseBusiness, role: 'Prestador' },
   { to: '/mensagens', label: 'Mensagens', icon: MessageCircle, badge: '0' },
+  { to: '/solicitacoes', label: 'Solicitações', icon: ClipboardList },
   { to: '/perfil', label: 'Meu Perfil', icon: UserRound },
   { to: '/configuracoes', label: 'Configurações', icon: Settings },
 ];

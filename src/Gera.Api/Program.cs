@@ -37,6 +37,7 @@ builder.Services.AddOptions<Gera.Application.Ofertas.OfertaOptions>()
     .ValidateOnStart();
 builder.Services.AddScoped<IProfileSummaryService, ProfileSummaryService>();
 builder.Services.AddScoped<PrestadorPublicoService>();
+builder.Services.AddScoped<Gera.Application.Solicitacoes.SolicitacaoService>();
 builder.Services.AddSingleton<ITokenService, TokenService>();
 builder.Services.AddScoped<IEmailSender>(provider => builder.Environment.IsDevelopment()
     ? ActivatorUtilities.CreateInstance<DevelopmentEmailSender>(provider)

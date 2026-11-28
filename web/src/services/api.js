@@ -63,6 +63,13 @@ export const api = {
   publicarOferta: id => request(`/ofertas/${id}/publicar`, { method: 'POST' }),
   alterarStatusOferta: (id, status) => request(`/ofertas/${id}/status`, { method: 'PATCH', body: json({ status }) }),
   excluirOferta: id => request(`/ofertas/${id}`, { method: 'DELETE' }),
+  minhasSolicitacoes: etapa => request(`/solicitacoes/minhas${etapa ? `?etapa=${etapa}` : ''}`),
+  criarSolicitacao: (ofertaId, descricao) => request(`/ofertas/${ofertaId}/solicitacoes`, { method: 'POST', body: json({ descricao }) }),
+  proporOrcamento: (id, body) => request(`/solicitacoes/${id}/orcamentos`, { method: 'POST', body: json(body) }),
+  responderOrcamento: (id, quoteId, aceitar, versao) => request(`/solicitacoes/${id}/orcamentos/${quoteId}/${aceitar ? 'aceitar' : 'recusar'}`, { method: 'POST', body: json({ versao }) }),
+  moverSolicitacao: (id, etapa, versao, motivo) => request(`/solicitacoes/${id}/etapa`, { method: 'PATCH', body: json({ etapa, versao, motivo }) }),
+  solicitarConclusao: (id, versao) => request(`/solicitacoes/${id}/solicitar-conclusao`, { method: 'POST', body: json({ versao }) }),
+  confirmarConclusao: (id, versao) => request(`/solicitacoes/${id}/confirmar-conclusao`, { method: 'POST', body: json({ versao }) }),
   forgotPassword: body => request('/auth/esqueci-senha', { method: 'POST', body: json(body) }, false),
   resetPassword: body => request('/auth/redefinir-senha', { method: 'POST', body: json(body) }, false),
 };
