@@ -1,6 +1,11 @@
+import { HubConnectionBuilder, LogLevel } from '@microsoft/signalr';
+
 let accessToken = null;
 export const setAccessToken = token => { accessToken = token; };
 const base = import.meta.env.VITE_API_BASE || '/api';
+const hubUrl = base.startsWith('http') ? `${new URL(base).origin}/hubs/chat` : '/hubs/chat';
+export const criarConexaoChat = () => new HubConnectionBuilder().withUrl(hubUrl, { accessTokenFactory: () => accessToken || '' })
+  .withAutomaticReconnect().configureLogging(import.meta.env.DEV ? LogLevel.Warning : LogLevel.Error).build();
 class ApiError extends Error { constructor(message, status, data) { super(message); this.status = status; this.data = data; } }
 let refreshPromise = null;
 function refreshOnce() {
@@ -70,6 +75,17 @@ export const api = {
   moverSolicitacao: (id, etapa, versao, motivo) => request(`/solicitacoes/${id}/etapa`, { method: 'PATCH', body: json({ etapa, versao, motivo }) }),
   solicitarConclusao: (id, versao) => request(`/solicitacoes/${id}/solicitar-conclusao`, { method: 'POST', body: json({ versao }) }),
   confirmarConclusao: (id, versao) => request(`/solicitacoes/${id}/confirmar-conclusao`, { method: 'POST', body: json({ versao }) }),
+  conversas: () => request('/mensagens/conversas'),
+  mensagens: (id, antesDe) => request(`/mensagens/${id}${antesDe ? `?antesDe=${antesDe}` : ''}`),
+  enviarMensagem: (id, conteudo) => request(`/mensagens/${id}`, { method: 'POST', body: json({ conteudo }) }),
+  enviarMidiaChat: (id, arquivo) => { const body = new FormData(); body.append('arquivo', arquivo); return request(`/mensagens/${id}/midia`, { method: 'POST', body }); },
+  midiaChat: url => request(url.slice('/api'.length), { resposta: 'blob' }),
+  marcarMensagensLidas: id => request(`/mensagens/${id}/lidas`, { method: 'POST' }),
+  notificacoes: (pagina = 1, tamanho = 20) => request(`/notificacoes?${new URLSearchParams({ pagina, tamanho })}`),
+  marcarNotificacaoLida: id => request(`/notificacoes/${id}/lida`, { method: 'PATCH' }),
+  marcarTodasNotificacoesLidas: () => request('/notificacoes/lidas', { method: 'POST' }),
+  preferenciasNotificacao: () => request('/notificacoes/preferencias'),
+  alterarPreferenciasNotificacao: ativas => request('/notificacoes/preferencias', { method: 'PUT', body: json({ ativas }) }),
   forgotPassword: body => request('/auth/esqueci-senha', { method: 'POST', body: json(body) }, false),
   resetPassword: body => request('/auth/redefinir-senha', { method: 'POST', body: json(body) }, false),
 };

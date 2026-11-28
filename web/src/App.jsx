@@ -21,6 +21,7 @@ const NovaOfertaPage = lazy(() => import('./pages/NovaOfertaPage.jsx'));
 const MessagesPage = lazy(() => import('./pages/MessagesPage.jsx'));
 const ProfilePage = lazy(() => import('./pages/ProfilePage.jsx'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage.jsx'));
+const NotificationsPage = lazy(() => import('./pages/NotificationsPage.jsx'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage.jsx'));
 
 function Loading() { return <div className="page-content"><Skeleton lines={5} /></div>; }
@@ -41,6 +42,7 @@ export default function App() {
       <Route path="/trabalhador/ofertas/nova" element={<NovaOfertaPage />} />
       <Route path="/trabalhador/ofertas/:id" element={<OfertaEditorPage />} />
       <Route path="/mensagens" element={<MessagesPage />} />
+      <Route path="/notificacoes" element={<NotificationsPage />} />
       <Route path="/perfil" element={<ProfilePage />} />
       <Route path="/configuracoes" element={<SettingsPage />} />
     </Route></Route>

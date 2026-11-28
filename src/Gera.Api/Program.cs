@@ -38,6 +38,9 @@ builder.Services.AddOptions<Gera.Application.Ofertas.OfertaOptions>()
 builder.Services.AddScoped<IProfileSummaryService, ProfileSummaryService>();
 builder.Services.AddScoped<PrestadorPublicoService>();
 builder.Services.AddScoped<Gera.Application.Solicitacoes.SolicitacaoService>();
+builder.Services.AddScoped<Gera.Application.Mensagens.MensagemService>();
+builder.Services.AddScoped<Gera.Application.Mensagens.NotificacaoService>();
+builder.Services.AddSignalR();
 builder.Services.AddSingleton<ITokenService, TokenService>();
 builder.Services.AddScoped<IEmailSender>(provider => builder.Environment.IsDevelopment()
     ? ActivatorUtilities.CreateInstance<DevelopmentEmailSender>(provider)
@@ -62,6 +65,16 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
         ValidateIssuerSigningKey = true, IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret)),
         ValidateLifetime = true, ClockSkew = TimeSpan.Zero, NameClaimType = "name"
     };
+    options.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            var accessToken = context.Request.Query["access_token"];
+            if (!string.IsNullOrEmpty(accessToken) && context.HttpContext.Request.Path.StartsWithSegments("/hubs/chat"))
+                context.Token = accessToken;
+            return Task.CompletedTask;
+        }
+    };
 });
 builder.Services.AddAuthorization(options => options.FallbackPolicy = new AuthorizationPolicyBuilder()
     .RequireAuthenticatedUser().Build());
@@ -77,6 +90,12 @@ builder.Services.AddRateLimiter(options =>
     options.AddPolicy("feed-ofertas", context => RateLimitPartition.GetFixedWindowLimiter(
         context.Connection.RemoteIpAddress?.ToString() ?? "ip-desconhecido",
         _ => new FixedWindowRateLimiterOptions { PermitLimit = 120, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
+    options.AddPolicy("midia-chat", context => RateLimitPartition.GetFixedWindowLimiter(
+        context.User.FindFirst("sub")?.Value ?? context.Connection.RemoteIpAddress?.ToString() ?? "ip-desconhecido",
+        _ => new FixedWindowRateLimiterOptions { PermitLimit = 10, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
+    options.AddPolicy("chat-mensagens", context => RateLimitPartition.GetFixedWindowLimiter(
+        context.User.FindFirst("sub")?.Value ?? context.Connection.RemoteIpAddress?.ToString() ?? "ip-desconhecido",
+        _ => new FixedWindowRateLimiterOptions { PermitLimit = 30, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
 });
 
 // Configuração do Swagger com suporte a Bearer JWT
@@ -152,6 +171,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHub<Gera.Api.Hubs.ChatHub>("/hubs/chat").RequireAuthorization();
 
 // Health check endpoint
 app.MapGet("/api/health", () => Results.Ok(new

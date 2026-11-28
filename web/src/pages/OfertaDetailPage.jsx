@@ -70,6 +70,7 @@ export default function OfertaDetailPage() {
             {solicitacao.isSuccess && <p role="status">Solicitação enviada. Acompanhe em Solicitações.</p>}
             <Button type="submit" loading={solicitacao.isPending}>Solicitar orçamento</Button>
           </form>}
+          {solicitacao.isSuccess && <Link to={`/mensagens?id=${solicitacao.data.id}`}>Abrir conversa</Link>}
         </Card>
         <Card className="public-detail__prestador">
           <Link to={`/prestadores/${offer.prestadorId}`} aria-label={`Ver perfil de ${offer.prestador}`}>

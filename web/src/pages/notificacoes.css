@@ -1,0 +1,2 @@
+.notificacao-lista{display:grid;gap:var(--space-3);padding:0;list-style:none}.notificacao-card{display:flex;align-items:center;justify-content:space-between;gap:var(--space-4)}.notificacao-card--lida{background:#F8FAFC}.notificacao-card p{margin:var(--space-1) 0}.notificacao-card time{color:var(--color-text-secondary);font-size:.85rem}.notificacao-card__acoes{display:flex;flex-wrap:wrap;gap:var(--space-2)}
+@media(max-width:640px){.notificacao-card{align-items:flex-start;flex-direction:column}}

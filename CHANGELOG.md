@@ -1,5 +1,7 @@
 # Changelog
 
+Consulte [Etapa 8 — Chat e notificações](docs/ETAPA-8-CHAT-NOTIFICACOES.md) para endpoints e regras desta entrega.
+
 Consulte [Etapa 7 — Solicitações](docs/ETAPA-7-SOLICITACOES.md) para regras e endpoints deste fluxo.
 
 Mudanças relevantes do Gera, organizadas por entrega.

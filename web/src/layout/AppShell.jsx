@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Bell, BriefcaseBusiness, ClipboardList, Grid2X2, House, LogOut, Menu, MessageCircle, Search, Settings, UserRound, X } from 'lucide-react';
 import { useAuth } from '../auth/AuthContext.jsx';
 import { Avatar, Badge, Button } from '../design/components.jsx';
 import './layout.css';
+import { api, criarConexaoChat } from '../services/api.js';
 
 const navItems = [
   { to: '/', label: 'Início', icon: House, role: 'Cliente', end: true },
@@ -11,6 +13,7 @@ const navItems = [
   { to: '/trabalhador', label: 'Painel do Trabalhador', icon: BriefcaseBusiness, role: 'Prestador' },
   { to: '/mensagens', label: 'Mensagens', icon: MessageCircle, badge: '0' },
   { to: '/solicitacoes', label: 'Solicitações', icon: ClipboardList },
+  { to: '/notificacoes', label: 'Notificações', icon: Bell },
   { to: '/perfil', label: 'Meu Perfil', icon: UserRound },
   { to: '/configuracoes', label: 'Configurações', icon: Settings },
 ];
@@ -35,6 +38,23 @@ function RoleSwitcher() {
   </div>;
 }
 
+function NotificationShortcut({ token }) {
+  const query = useQuery({ queryKey: ['notificacoes', 1], queryFn: () => api.notificacoes(1, 50), staleTime: 15000, refetchOnWindowFocus: true });
+  const cache = useQueryClient();
+  useEffect(() => {
+    if (!token) return undefined;
+    const connection = criarConexaoChat();
+    const refresh = () => cache.invalidateQueries({ queryKey: ['notificacoes'] });
+    connection.on('NotificacaoRecebida', refresh);
+    connection.start().catch(() => {});
+    return () => { connection.off('NotificacaoRecebida', refresh); connection.stop(); };
+  }, [token, cache]);
+  const count = query.data?.naoLidas || 0;
+  return <Link to="/notificacoes" className="notification-button" aria-label={`Notificações, ${count} não lidas`}>
+    <Bell size={21} /><Badge>{count > 9 ? '9+' : count}</Badge>
+  </Link>;
+}
+
 function NavItems({ items, activeRole, onNavigate, className = '' }) {
   return <div className={className}>{items.map(({ to, label, icon: Icon, badge, role, end }) => <NavLink key={to} to={to} end={end} onClick={onNavigate} data-role-context={role === activeRole || undefined} className={({ isActive }) => `app-nav-link${isActive ? ' is-active' : ''}`}>
     <Icon size={20} aria-hidden="true" /><span>{label}</span>{badge && <Badge className="app-nav-link__badge">{badge}</Badge>}
@@ -43,7 +63,7 @@ function NavItems({ items, activeRole, onNavigate, className = '' }) {
 
 export default function AppShell() {
   const mobile = useIsMobile(); const [drawerOpen, setDrawerOpen] = useState(false);
-  const { user, activeRole, logout } = useAuth(); const navigate = useNavigate();
+  const { user, token, activeRole, logout } = useAuth(); const navigate = useNavigate();
   const name = user?.nome || 'Minha conta';
   async function signOut() { await logout(); setDrawerOpen(false); navigate('/entrar', { replace: true }); }
 
@@ -55,8 +75,7 @@ export default function AppShell() {
       <label className="app-search"><Search size={18} aria-hidden="true" /><input type="search" placeholder="Buscar serviços" aria-label="Buscar serviços" readOnly /></label>
       <div className="app-header__actions">
         {!mobile && <RoleSwitcher />}
-        {mobile && <button className="notification-button" type="button" aria-label="Notificações, 0 novas"><Bell size={21} /><Badge>0</Badge></button>}
-        {!mobile && <button className="notification-button" type="button" aria-label="Notificações, 0 novas"><Bell size={21} /><Badge>0</Badge></button>}
+        <NotificationShortcut token={token} />
         <details className="profile-menu"><summary aria-label={`Abrir menu da conta ${name}`}><Avatar name={name} src={user?.fotoUrl} size="sm" /></summary><div className="profile-menu__panel"><strong>{name}</strong><RoleSwitcher /><NavLink to="/perfil" onClick={() => setDrawerOpen(false)}>Meu Perfil</NavLink><NavLink to="/configuracoes">Configurações</NavLink><button type="button" onClick={signOut}><LogOut size={17} /> Sair</button></div></details>
       </div>
     </header>

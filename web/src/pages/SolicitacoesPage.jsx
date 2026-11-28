@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Badge, Button, Card, EmptyState, ErrorState, PageHeader, Skeleton } from '../design/components.jsx';
 import { useAuth } from '../auth/AuthContext.jsx';
@@ -44,6 +45,7 @@ export default function SolicitacoesPage() {
           const set = (field, value) => setForms(current => ({ ...current, [item.id]: { ...current[item.id], [field]: value } }));
           return <Card className="kanban-card" key={item.id}>
             <h3>{item.ofertaTitulo}</h3><p>{outro}</p><p className="kanban-card__description">{item.descricao}</p>
+            <Link to={`/mensagens?id=${item.id}`}>Abrir conversa</Link>
             {item.valor != null && <strong>{money.format(item.valor)}</strong>}
             {item.dataAgendada && <p>Agendado: {new Intl.DateTimeFormat('pt-BR', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(item.dataAgendada))}</p>}
             <details><summary>Orçamentos e histórico</summary>

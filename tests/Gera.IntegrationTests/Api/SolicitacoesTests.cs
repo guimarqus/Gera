@@ -78,6 +78,10 @@ public sealed class SolicitacoesTests
         item.Etapa.Should().Be(EtapaKanban.Concluidos);
         item.Historicos.Select(h => h.EtapaNova).Should().ContainInOrder(EtapaKanban.EmNegociacao, EtapaKanban.Agendados, EtapaKanban.EmExecucao, EtapaKanban.Concluidos);
         item.Historicos.Should().OnlyContain(h => h.UsuarioId == clienteId || h.UsuarioId == prestadorId);
+        using var verificacao = factory.Services.CreateScope();
+        var tiposMensagem = await verificacao.ServiceProvider.GetRequiredService<AppDbContext>().Mensagens
+            .Where(m => m.SolicitacaoId == item.Id).Select(m => m.Tipo).ToArrayAsync();
+        tiposMensagem.Should().Contain(TipoMensagem.OrcamentoProposto).And.Contain(TipoMensagem.MudancaEtapa);
     }
 
     private static async Task<int> AutenticarAsync(HttpClient client)

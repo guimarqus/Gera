@@ -57,6 +57,8 @@ public sealed class SolicitacaoService(IAppDbContext db)
             OQueEstaIncluso = request.OQueEstaIncluso.Trim(), Observacoes = request.Observacoes?.Trim(), Status = StatusOrcamento.Pendente
         };
         db.Orcamentos.Add(orcamento);
+        db.Mensagens.Add(new Mensagem { SolicitacaoId = id, RemetenteId = usuarioId, Tipo = TipoMensagem.OrcamentoProposto,
+            Conteudo = $"Orçamento proposto: {orcamento.Valor.ToString("C", System.Globalization.CultureInfo.GetCultureInfo("pt-BR"))} — {orcamento.OQueEstaIncluso}", Orcamento = orcamento });
         await AvancarEtapaAsync(item, usuarioId, EtapaKanban.EmNegociacao, "Orçamento proposto", ct);
         await NotificarAsync(usuarioId == item.ClienteId ? item.PrestadorId : item.ClienteId, "Novo orçamento", "Uma nova proposta foi enviada.", TipoNotificacao.OrcamentoRecebido, id);
         await db.SaveChangesAsync(ct);
@@ -72,6 +74,8 @@ public sealed class SolicitacaoService(IAppDbContext db)
         if (quote.AutorId == usuarioId) throw new DomainException("A proposta deve ser respondida pela outra parte.");
         quote.RespondidoEm = DateTime.UtcNow;
         quote.Status = aceitar ? StatusOrcamento.Aceito : StatusOrcamento.Recusado;
+        db.Mensagens.Add(new Mensagem { SolicitacaoId = id, RemetenteId = usuarioId, Tipo = TipoMensagem.OrcamentoProposto,
+            Conteudo = aceitar ? "Orçamento aceito e serviço agendado." : "Orçamento recusado.", OrcamentoId = quote.Id });
         if (aceitar)
         {
             if (!quote.DataPrevisao.HasValue) throw new DomainException("A proposta precisa informar uma data para ser aceita e agendada.");
@@ -114,6 +118,7 @@ public sealed class SolicitacaoService(IAppDbContext db)
         var item = await ObterEntidadeAsync(usuarioId, id, request.Versao, ct);
         if (usuarioId != item.PrestadorId || item.Etapa != EtapaKanban.EmExecucao) throw new DomainException("Somente o prestador pode solicitar a conclusão durante a execução.");
         item.ConcluidoPorPrestador = true;
+        db.Mensagens.Add(new Mensagem { SolicitacaoId = id, RemetenteId = usuarioId, Tipo = TipoMensagem.MudancaEtapa, Conteudo = "O prestador solicitou a confirmação de conclusão." });
         await NotificarAsync(item.ClienteId, "Serviço concluído?", "O prestador solicitou a confirmação da conclusão.", TipoNotificacao.EtapaAlterada, id);
         await db.SaveChangesAsync(ct);
         return await ObterAsync(usuarioId, id, ct);
@@ -168,13 +173,14 @@ public sealed class SolicitacaoService(IAppDbContext db)
         if (!permitido) throw new TransicaoInvalidaException(origem, destino, "A etapa não pode ser avançada neste momento.");
         item.Etapa = destino;
         db.SolicitacaoHistoricos.Add(new SolicitacaoHistorico { SolicitacaoId = item.Id, UsuarioId = usuarioId, EtapaAnterior = origem, EtapaNova = destino, Observacao = observacao });
+        db.Mensagens.Add(new Mensagem { SolicitacaoId = item.Id, RemetenteId = usuarioId, Tipo = TipoMensagem.MudancaEtapa, Conteudo = $"Solicitação avançou para {destino}." });
         var outro = usuarioId == item.ClienteId ? item.PrestadorId : item.ClienteId;
         await NotificarAsync(outro, "Atualização da solicitação", $"A solicitação avançou para {destino}.", TipoNotificacao.EtapaAlterada, item.Id);
     }
 
-    private Task NotificarAsync(int usuarioId, string titulo, string mensagem, TipoNotificacao tipo, int id)
+    private async Task NotificarAsync(int usuarioId, string titulo, string mensagem, TipoNotificacao tipo, int id)
     {
+        if (!await db.Usuarios.AnyAsync(u => u.Id == usuarioId && u.NotificacoesAtivas)) return;
         db.Notificacoes.Add(new Notificacao { UsuarioId = usuarioId, Titulo = titulo, Mensagem = mensagem, Tipo = tipo, ReferenciaId = id, Link = "/solicitacoes" });
-        return Task.CompletedTask;
     }
 }

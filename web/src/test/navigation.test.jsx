@@ -8,11 +8,12 @@ import ProtectedRoute from '../routing/ProtectedRoute.jsx';
 import CategoriesPage from '../pages/CategoriesPage.jsx';
 import { api } from '../services/api.js';
 
-vi.mock('../services/api.js', () => ({ api: { categories: vi.fn() } }));
+vi.mock('../services/api.js', () => ({ api: { categories: vi.fn(), notificacoes: vi.fn().mockResolvedValue({ naoLidas: 0, itens: [], totalPaginas: 1 }) }, criarConexaoChat: () => ({ on: vi.fn(), off: vi.fn(), start: vi.fn().mockResolvedValue(), stop: vi.fn().mockResolvedValue() }) }));
 const auth = (overrides = {}) => ({ token: 'access', ready: true, user: { nome: 'Ana Souza' }, activeRole: 'Cliente', chooseRole: vi.fn(), logout: vi.fn(), ...overrides });
 function Location() { const location = useLocation(); return <output data-testid="location">{location.pathname}{location.state?.from || ''}</output>; }
 function renderWithAuth(ui, value = auth(), initialEntries = ['/']) {
- return render(<AuthContext.Provider value={value}><MemoryRouter initialEntries={initialEntries}><Routes>{ui}</Routes></MemoryRouter></AuthContext.Provider>);
+ const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+ return render(<QueryClientProvider client={client}><AuthContext.Provider value={value}><MemoryRouter initialEntries={initialEntries}><Routes>{ui}</Routes></MemoryRouter></AuthContext.Provider></QueryClientProvider>);
 }
 afterEach(() => cleanup());
 
