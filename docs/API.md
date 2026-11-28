@@ -99,3 +99,11 @@ O limite padrão para cada endereço IP é de 10 requisições por minuto nos en
 - `DELETE .../fotos/{fotoId}` recebe a versão em `If-Match` e remove a foto do anúncio. A remoção da última foto de uma oferta ativa é bloqueada. As operações retornam a lista atualizada e a nova versão da oferta.
 - `POST /api/ofertas/{id}/fotos` recebe um arquivo por requisição em `multipart/form-data`, nos campos `arquivo` e `versao`. O limite é de dez fotos por oferta e 5 MB por imagem. A API recebe JPEG, PNG e WebP estáticos, rejeita entradas acima de 16 megapixels e recria a foto e a miniatura em WebP.
 - As URLs geradas são servidas pela API. O arquivo é visível ao proprietário ou quando a oferta está ativa. O armazenamento local fica em `src/Gera.Api/App_Data/ofertas` no ambiente de desenvolvimento.
+
+### Feed público de serviços
+
+- `GET /api/ofertas/feed` lista apenas ofertas ativas e não excluídas. Aceita `busca`, `categoriaId` (inclui subcategorias diretas), `precoMinimo`, `precoMaximo`, `disponibilidade`, `cidade`, `latitude`, `longitude`, `raioKm`, `ordem`, `pagina` e `tamanho`. O filtro `cidade` procura tanto em cidade quanto em bairro.
+- Coordenadas devem ser enviadas em par. A consulta limita resultados ao menor entre o raio pesquisado (1 a 200 km) e o raio de atendimento cadastrado pelo prestador. A resposta informa distância aproximada, sem devolver latitude ou longitude.
+- Ordenações aceitas: `proximidade`, `recentes`, `menor-preco`, `maior-preco` e `melhor-avaliadas`. Sem coordenadas, proximidade usa data de publicação.
+- A página padrão contém 20 resultados e o máximo é 50. A resposta inclui total e quantidade de páginas. O feed aceita acesso anônimo; `ehFavorita` é personalizado quando há usuário autenticado.
+- `PUT /api/ofertas/{id}/favorito` salva uma oferta ativa para o usuário autenticado; repetir a chamada é seguro. `DELETE` desfaz o favorito e também é idempotente.

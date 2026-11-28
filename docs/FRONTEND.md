@@ -16,7 +16,7 @@ Os tokens ficam em `design/tokens.css`: cores Gera, espacamentos, raio de 12 px,
 ## Rotas
 
 Publicas: `/entrar`, `/cadastrar`, `/esqueci-senha`, `/redefinir-senha`.
-Protegidas no AppShell: `/`, `/categorias`, `/categorias/:id`, `/trabalhador`, `/mensagens`, `/perfil`, `/configuracoes`. Categorias busca a arvore em `GET /api/categorias`; as demais paginas protegidas tem estrutura e estado provisoriamente vazio.
+Protegidas no AppShell: `/`, `/categorias`, `/categorias/:id`, `/trabalhador`, `/mensagens`, `/perfil`, `/configuracoes`. A página inicial consulta categorias e `GET /api/ofertas/feed`, permite busca por texto, categoria, preço e cidade, solicita localização do navegador por ação do usuário, e oferece ordenação, paginação e favoritos. A busca por cidade continua disponível quando a permissão de localização é negada.
 
 ## Adicionar uma pagina
 

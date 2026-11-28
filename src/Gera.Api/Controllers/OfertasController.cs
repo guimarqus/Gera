@@ -3,15 +3,38 @@ using Gera.Application.Ofertas;
 using Gera.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Gera.Api.Controllers;
 
 [ApiController]
 [Authorize]
 [Route("api/ofertas")]
-public sealed class OfertasController(OfertaService ofertas) : ControllerBase
+public sealed class OfertasController(OfertaService ofertas, OfertaFeedService feed) : ControllerBase
 {
     private int? UsuarioId => int.TryParse(User.FindFirstValue("sub"), out var id) ? id : null;
+
+    [AllowAnonymous]
+    [HttpGet("feed")]
+    [EnableRateLimiting("feed-ofertas")]
+    public async Task<ActionResult<OfertaFeedPaginaDto>> Feed([FromQuery] OfertaFeedFiltro filtros, CancellationToken ct) =>
+        Ok(await feed.PesquisarAsync(filtros, UsuarioId, ct));
+
+    [HttpPut("{id:int}/favorito")]
+    public async Task<IActionResult> Favoritar(int id, CancellationToken ct)
+    {
+        if (UsuarioId is not int usuarioId) return Unauthorized();
+        await feed.FavoritarAsync(id, usuarioId, ct);
+        return NoContent();
+    }
+
+    [HttpDelete("{id:int}/favorito")]
+    public async Task<IActionResult> Desfavoritar(int id, CancellationToken ct)
+    {
+        if (UsuarioId is not int usuarioId) return Unauthorized();
+        await feed.DesfavoritarAsync(id, usuarioId, ct);
+        return NoContent();
+    }
 
     [HttpPost]
     public async Task<ActionResult<OfertaPrivadaDto>> Criar(CancellationToken ct)

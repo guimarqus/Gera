@@ -28,7 +28,7 @@ public sealed class OfertaRascunhoTests
         var url = $"/api/ofertas/{rascunho.Id}";
         var dados = new EditarOfertaRequest(401, "Pintura residencial",
             "Pintura de paredes e tetos em residências.", TipoPreco.ACombinar, null,
-            -3.119, -60.021, 20, "Manaus", null, "Segunda a sexta", null, rascunho.Versao);
+            -3.119, -60.021, 20, "Manaus", "Centro", "Segunda a sexta", null, rascunho.Versao);
         (await proprietario.PutAsJsonAsync(url, dados)).StatusCode.Should().Be(HttpStatusCode.OK);
         (await visitante.PostAsync($"{url}/publicar", null)).StatusCode.Should().Be(HttpStatusCode.NotFound);
         (await proprietario.PostAsync($"{url}/publicar", null)).StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -65,6 +65,21 @@ public sealed class OfertaRascunhoTests
         var respostaPublica = await visitante.GetStringAsync(url);
         respostaPublica.Should().NotContain("latitude").And.NotContain("longitude");
         (await visitante.GetAsync(urlArquivo)).StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var feed = await visitante.GetFromJsonAsync<OfertaFeedPaginaDto>(
+            "/api/ofertas/feed?busca=Pintura&categoriaId=4&disponibilidade=Segunda&latitude=-3.119&longitude=-60.021&raioKm=5&ordem=proximidade");
+        feed!.Ofertas.Should().ContainSingle(oferta => oferta.Id == rascunho.Id && oferta.DistanciaKm == 0);
+        feed.Ofertas[0].FotoCapaUrl.Should().Be(fotosComCapa.Fotos.Single(foto => foto.EhCapa).UrlMiniatura);
+        feed.Ofertas[0].EhFavorita.Should().BeFalse();
+        var feedJson = await visitante.GetStringAsync("/api/ofertas/feed?busca=Pintura&cidade=Centro");
+        feedJson.Should().NotContain("latitude").And.NotContain("longitude");
+
+        (await visitante.PutAsync($"{url}/favorito", null)).StatusCode.Should().Be(HttpStatusCode.NoContent);
+        (await visitante.PutAsync($"{url}/favorito", null)).StatusCode.Should().Be(HttpStatusCode.NoContent);
+        var favoritada = await visitante.GetFromJsonAsync<OfertaFeedPaginaDto>("/api/ofertas/feed?cidade=Centro");
+        favoritada!.Ofertas.Should().ContainSingle(oferta => oferta.Id == rascunho.Id && oferta.EhFavorita);
+        (await visitante.DeleteAsync($"{url}/favorito")).StatusCode.Should().Be(HttpStatusCode.NoContent);
+        (await visitante.DeleteAsync($"{url}/favorito")).StatusCode.Should().Be(HttpStatusCode.NoContent);
 
         var pausa = await proprietario.PatchAsJsonAsync($"{url}/status", new AlterarStatusOfertaRequest(StatusOferta.Pausado));
         pausa.StatusCode.Should().Be(HttpStatusCode.OK);

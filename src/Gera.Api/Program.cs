@@ -28,6 +28,7 @@ builder.Services.AddMemoryCache();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ICategoriasService, CategoriasService>();
 builder.Services.AddScoped<Gera.Application.Ofertas.OfertaService>();
+builder.Services.AddScoped<Gera.Application.Ofertas.OfertaFeedService>();
 builder.Services.AddScoped<Gera.Application.Ofertas.ModeloOfertaService>();
 builder.Services.AddScoped<Gera.Application.Ofertas.OfertaFotosService>();
 builder.Services.AddOptions<Gera.Application.Ofertas.OfertaOptions>()
@@ -71,6 +72,9 @@ builder.Services.AddRateLimiter(options =>
     options.AddPolicy("fotos-ofertas", context => RateLimitPartition.GetFixedWindowLimiter(
         context.User.FindFirst("sub")?.Value ?? context.Connection.RemoteIpAddress?.ToString() ?? "ip-desconhecido",
         _ => new FixedWindowRateLimiterOptions { PermitLimit = 20, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
+    options.AddPolicy("feed-ofertas", context => RateLimitPartition.GetFixedWindowLimiter(
+        context.Connection.RemoteIpAddress?.ToString() ?? "ip-desconhecido",
+        _ => new FixedWindowRateLimiterOptions { PermitLimit = 120, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
 });
 
 // Configuração do Swagger com suporte a Bearer JWT
