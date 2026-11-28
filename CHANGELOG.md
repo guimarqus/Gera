@@ -17,3 +17,7 @@ Mudanças relevantes do Gera, organizadas por entrega.
 ## Etapa 9 — avaliações, denúncias e bloqueios
 
 Consulte [documentação da Etapa 9](docs/ETAPA-9-AVALIACOES-CONFIANCA.md).
+
+## Etapa 10 — administração
+
+Consulte [documentação da Etapa 10](docs/ETAPA-10-ADMINISTRACAO.md).

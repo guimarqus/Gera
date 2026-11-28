@@ -83,3 +83,7 @@ O chat por solicitacao, mensagens e notificacoes no aplicativo estao descritos e
 ## Etapa 9: confianca e reputacao
 
 Consulte [avaliacoes, denuncias e bloqueios](docs/ETAPA-9-AVALIACOES-CONFIANCA.md).
+
+## Etapa 10: administracao
+
+Consulte [moderacao, categorias e auditoria](docs/ETAPA-10-ADMINISTRACAO.md).

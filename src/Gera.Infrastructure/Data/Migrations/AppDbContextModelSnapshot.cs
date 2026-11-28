@@ -23,6 +23,49 @@ namespace Gera.Infrastructure.Data.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("Gera.Domain.Entities.AuditoriaAdmin", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("Acao")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("AdministradorId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CriadoEm")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.Property<string>("Entidade")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Identificador")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<string>("Motivo")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AdministradorId", "CriadoEm")
+                        .HasDatabaseName("IX_AuditoriasAdmin_AdministradorId_CriadoEm");
+
+                    b.ToTable("AuditoriasAdmin", (string)null);
+                });
+
             modelBuilder.Entity("Gera.Domain.Entities.Avaliacao", b =>
                 {
                     b.Property<int>("Id")
@@ -1542,6 +1585,17 @@ namespace Gera.Infrastructure.Data.Migrations
                     b.HasKey("UserId", "LoginProvider", "Name");
 
                     b.ToTable("UsuarioTokens", (string)null);
+                });
+
+            modelBuilder.Entity("Gera.Domain.Entities.AuditoriaAdmin", b =>
+                {
+                    b.HasOne("Gera.Domain.Entities.Usuario", "Administrador")
+                        .WithMany()
+                        .HasForeignKey("AdministradorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Administrador");
                 });
 
             modelBuilder.Entity("Gera.Domain.Entities.Avaliacao", b =>

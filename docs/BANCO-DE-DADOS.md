@@ -20,6 +20,10 @@ As categorias iniciais são declaradas por `CategoriaConfiguration.HasData`. Há
 
 Consulte o código das migrations antes de atualizar um banco existente. A sessão de validação executou a suíte de integração, cujo fixture aplica `Database.MigrateAsync()` em um banco LocalDB de nome exclusivo e o remove ao final. Os testes de publicação também gravam coordenadas e confirmam o seed de categorias. A consulta manual por `sqlcmd` não foi concluída por falha TLS do cliente ODBC; não há confirmação do estado de um banco persistente de desenvolvimento.
 
+## Auditoria administrativa
+
+A migration `20261128145612_AuditoriaAdmin` acrescenta a tabela `AuditoriasAdmin`, com FK restrita para o administrador e índice por administrador/data, e cria o papel `Administrador` de forma idempotente. A conta inicial é provisionada pelo operador do banco; nenhuma conta recebe o papel automaticamente. Consulte [Etapa 10](ETAPA-10-ADMINISTRACAO.md). O SQL idempotente foi inspecionado, mas a migration não foi aplicada nesta sessão porque o LocalDB falhou ao iniciar.
+
 ## Comandos
 
 Configure `ConnectionStrings:DefaultConnection` via User Secrets antes de executar migrations. Para listar migrations e atualizar:

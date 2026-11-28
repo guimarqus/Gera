@@ -115,3 +115,7 @@ A inspecao direta de `sys.spatial_indexes`, do SRID persistido e do historico de
 **Status:** implementado; validacao integrada pendente no ambiente atual.
 
 Os fluxos de avaliacao, denuncia e bloqueio reutilizam as entidades e constraints existentes. As regras ficam centralizadas em ConfiancaService. Bloqueios ocultam ofertas para usuarios autenticados e impedem novas solicitacoes e interacoes de chat. Denuncias sao armazenadas para moderacao posterior, sem expor seu estado ao denunciante. Consulte docs/ETAPA-9-AVALIACOES-CONFIANCA.md para endpoints e limites.
+
+## ADR 010: Autorizacao e auditoria administrativa
+
+O papel Administrador e provisionado pelo operador do banco, nunca pelo cadastro publico. A autorizacao verifica membership no Identity e conta ativa. Suspensoes revogam refresh tokens; a validacao JWT consulta o estado ativo em cada requisicao. Acoes administrativas escrevem na tabela AuditoriasAdmin na mesma transacao da alteracao. Consulte docs/ETAPA-10-ADMINISTRACAO.md.

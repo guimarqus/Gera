@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Bell, BriefcaseBusiness, ClipboardList, Grid2X2, House, LogOut, Menu, MessageCircle, Search, Settings, UserRound, X } from 'lucide-react';
+import { Bell, BriefcaseBusiness, ClipboardList, Grid2X2, House, LogOut, Menu, MessageCircle, Search, Settings, ShieldCheck, UserRound, X } from 'lucide-react';
 import { useAuth } from '../auth/AuthContext.jsx';
 import { Avatar, Badge, Button } from '../design/components.jsx';
 import './layout.css';
@@ -16,6 +16,7 @@ const navItems = [
   { to: '/notificacoes', label: 'Notificações', icon: Bell },
   { to: '/perfil', label: 'Meu Perfil', icon: UserRound },
   { to: '/configuracoes', label: 'Configurações', icon: Settings },
+  { to: '/admin', label: 'Administração', icon: ShieldCheck, adminOnly: true },
 ];
 const mobileItems = navItems.filter(item => ['/', '/categorias', '/mensagens', '/perfil'].includes(item.to));
 
@@ -64,6 +65,9 @@ function NavItems({ items, activeRole, onNavigate, className = '' }) {
 export default function AppShell() {
   const mobile = useIsMobile(); const [drawerOpen, setDrawerOpen] = useState(false);
   const { user, token, activeRole, logout } = useAuth(); const navigate = useNavigate();
+  const profile = useQuery({ queryKey: ['profile-summary'], queryFn: api.profileSummary, enabled: Boolean(token), staleTime: 30_000 });
+  const isAdmin = profile.data?.papeis?.includes('Administrador') === true;
+  const visibleNav = navItems.filter(item => !item.adminOnly || isAdmin);
   const name = user?.nome || 'Minha conta';
   async function signOut() { await logout(); setDrawerOpen(false); navigate('/entrar', { replace: true }); }
 
@@ -80,10 +84,10 @@ export default function AppShell() {
       </div>
     </header>
 
-    {!mobile && <aside className="desktop-sidebar"><RoleSwitcher /><nav aria-label="Navegação principal"><NavItems items={navItems} activeRole={activeRole} className="desktop-sidebar__links" /></nav><Button variant="ghost" className="sign-out" onClick={signOut}><LogOut size={19} /> Sair</Button></aside>}
+    {!mobile && <aside className="desktop-sidebar"><RoleSwitcher /><nav aria-label="Navegação principal"><NavItems items={visibleNav} activeRole={activeRole} className="desktop-sidebar__links" /></nav><Button variant="ghost" className="sign-out" onClick={signOut}><LogOut size={19} /> Sair</Button></aside>}
 
     {mobile && <nav className="mobile-bottom-nav" aria-label="Navegação principal no celular"><NavItems items={mobileItems} activeRole={activeRole} className="mobile-bottom-nav__links" /></nav>}
-    {mobile && drawerOpen && <><button className="drawer-backdrop" aria-label="Fechar menu" onClick={() => setDrawerOpen(false)} /><aside id="mobile-drawer" className="mobile-drawer"><div className="mobile-drawer__head"><span>Mais opções</span><Button variant="ghost" aria-label="Fechar menu adicional" onClick={() => setDrawerOpen(false)}><X /></Button></div><RoleSwitcher /><nav aria-label="Menu adicional"><NavItems items={navItems.filter(item => !mobileItems.includes(item))} activeRole={activeRole} onNavigate={() => setDrawerOpen(false)} className="mobile-drawer__links" /></nav><Button variant="ghost" className="sign-out" onClick={signOut}><LogOut size={19} /> Sair</Button></aside></>}
+    {mobile && drawerOpen && <><button className="drawer-backdrop" aria-label="Fechar menu" onClick={() => setDrawerOpen(false)} /><aside id="mobile-drawer" className="mobile-drawer"><div className="mobile-drawer__head"><span>Mais opções</span><Button variant="ghost" aria-label="Fechar menu adicional" onClick={() => setDrawerOpen(false)}><X /></Button></div><RoleSwitcher /><nav aria-label="Menu adicional"><NavItems items={visibleNav.filter(item => !mobileItems.includes(item))} activeRole={activeRole} onNavigate={() => setDrawerOpen(false)} className="mobile-drawer__links" /></nav><Button variant="ghost" className="sign-out" onClick={signOut}><LogOut size={19} /> Sair</Button></aside></>}
 
     <main id="main-content" className="app-main" tabIndex={-1}><Outlet /></main>
   </div>;

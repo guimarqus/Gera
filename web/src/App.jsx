@@ -22,6 +22,7 @@ const MessagesPage = lazy(() => import('./pages/MessagesPage.jsx'));
 const ProfilePage = lazy(() => import('./pages/ProfilePage.jsx'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage.jsx'));
 const NotificationsPage = lazy(() => import('./pages/NotificationsPage.jsx'));
+const AdminPage = lazy(() => import('./pages/AdminPage.jsx'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage.jsx'));
 
 function Loading() { return <div className="page-content"><Skeleton lines={5} /></div>; }
@@ -45,6 +46,7 @@ export default function App() {
       <Route path="/notificacoes" element={<NotificationsPage />} />
       <Route path="/perfil" element={<ProfilePage />} />
       <Route path="/configuracoes" element={<SettingsPage />} />
+      <Route path="/admin" element={<AdminPage />} />
     </Route></Route>
     <Route path="*" element={<NotFoundPage />} />
   </Routes></Suspense></GlobalErrorBoundary>;

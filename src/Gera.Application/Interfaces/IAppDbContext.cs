@@ -23,6 +23,7 @@ public interface IAppDbContext
     DbSet<Notificacao> Notificacoes { get; }
     DbSet<Denuncia> Denuncias { get; }
     DbSet<Bloqueio> Bloqueios { get; }
+    DbSet<AuditoriaAdmin> AuditoriasAdmin { get; }
     DbSet<Pagamento> Pagamentos { get; }
 
     DatabaseFacade Database { get; }

@@ -12,6 +12,9 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using System.Threading.RateLimiting;
+using Gera.Api.Security;
+using Gera.Domain.Entities;
+using Microsoft.AspNetCore.Identity;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -41,6 +44,8 @@ builder.Services.AddScoped<Gera.Application.Solicitacoes.SolicitacaoService>();
 builder.Services.AddScoped<Gera.Application.Mensagens.MensagemService>();
 builder.Services.AddScoped<Gera.Application.Mensagens.NotificacaoService>();
 builder.Services.AddScoped<Gera.Application.Confianca.ConfiancaService>();
+builder.Services.AddScoped<Gera.Application.Admin.AdminService>();
+builder.Services.AddScoped<IAuthorizationHandler, AdministradorAuthorizationHandler>();
 builder.Services.AddSignalR();
 builder.Services.AddSingleton<ITokenService, TokenService>();
 builder.Services.AddScoped<IEmailSender>(provider => builder.Environment.IsDevelopment()
@@ -68,6 +73,14 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
     };
     options.Events = new JwtBearerEvents
     {
+        OnTokenValidated = async context =>
+        {
+            var subject = context.Principal?.FindFirst("sub")?.Value;
+            if (!int.TryParse(subject, out var userId)) { context.Fail("Identidade do usuário inválida."); return; }
+            var userManager = context.HttpContext.RequestServices.GetRequiredService<UserManager<Usuario>>();
+            var user = await userManager.FindByIdAsync(userId.ToString());
+            if (user is null || !user.Ativo) context.Fail("Conta indisponível.");
+        },
         OnMessageReceived = context =>
         {
             var accessToken = context.Request.Query["access_token"];
@@ -77,8 +90,11 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
         }
     };
 });
-builder.Services.AddAuthorization(options => options.FallbackPolicy = new AuthorizationPolicyBuilder()
-    .RequireAuthenticatedUser().Build());
+builder.Services.AddAuthorization(options =>
+{
+    options.FallbackPolicy = new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build();
+    options.AddPolicy("Administrador", policy => policy.Requirements.Add(new AdministradorRequirement()));
+});
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;

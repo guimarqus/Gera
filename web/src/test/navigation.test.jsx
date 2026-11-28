@@ -8,7 +8,7 @@ import ProtectedRoute from '../routing/ProtectedRoute.jsx';
 import CategoriesPage from '../pages/CategoriesPage.jsx';
 import { api } from '../services/api.js';
 
-vi.mock('../services/api.js', () => ({ api: { categories: vi.fn(), notificacoes: vi.fn().mockResolvedValue({ naoLidas: 0, itens: [], totalPaginas: 1 }) }, criarConexaoChat: () => ({ on: vi.fn(), off: vi.fn(), start: vi.fn().mockResolvedValue(), stop: vi.fn().mockResolvedValue() }) }));
+vi.mock('../services/api.js', () => ({ api: { categories: vi.fn(), profileSummary: vi.fn().mockResolvedValue({ papeis: [] }), notificacoes: vi.fn().mockResolvedValue({ naoLidas: 0, itens: [], totalPaginas: 1 }) }, criarConexaoChat: () => ({ on: vi.fn(), off: vi.fn(), start: vi.fn().mockResolvedValue(), stop: vi.fn().mockResolvedValue() }) }));
 const auth = (overrides = {}) => ({ token: 'access', ready: true, user: { nome: 'Ana Souza' }, activeRole: 'Cliente', chooseRole: vi.fn(), logout: vi.fn(), ...overrides });
 function Location() { const location = useLocation(); return <output data-testid="location">{location.pathname}{location.state?.from || ''}</output>; }
 function renderWithAuth(ui, value = auth(), initialEntries = ['/']) {
@@ -22,6 +22,7 @@ describe('AppShell', () => {
  it('mostra menu lateral desktop completo', () => { window.__mobile = false; renderWithAuth(<Route element={<AppShell />}><Route path="/" element={<p>Conteúdo</p>} /></Route>); const nav = screen.getByRole('navigation', { name: 'Navegação principal' }); expect(nav).toBeInTheDocument(); expect(nav).toHaveTextContent('Painel do Trabalhador'); expect(nav).toHaveTextContent('Configurações'); });
  it('mostra quatro destinos na navegação mobile e drawer com opções extras', () => { window.__mobile = true; renderWithAuth(<Route element={<AppShell />}><Route path="/" element={<p>Conteúdo</p>} /></Route>); expect(screen.getByRole('navigation', { name: 'Navegação principal no celular' }).querySelectorAll('a')).toHaveLength(4); fireEvent.click(screen.getByRole('button', { name: 'Abrir menu adicional' })); expect(screen.getByRole('navigation', { name: 'Menu adicional' })).toHaveTextContent('Painel do Trabalhador'); });
  it('alterna papel ativo pela preferência de interface', () => { window.__mobile = false; const context = auth(); renderWithAuth(<Route element={<AppShell />}><Route path="/" element={<p>Conteúdo</p>} /></Route>, context); fireEvent.click(screen.getAllByRole('button', { name: 'Prestador' })[0]); expect(context.chooseRole).toHaveBeenCalledWith('Prestador'); });
+ it('exibe administração apenas para o papel concedido no servidor', async () => { window.__mobile = false; api.profileSummary.mockResolvedValue({ papeis: ['Administrador'] }); renderWithAuth(<Route element={<AppShell />}><Route path="/" element={<p>Conteúdo</p>} /></Route>); expect(await screen.findByRole('link', { name: 'Administração' })).toHaveAttribute('href', '/admin'); });
 });
 
 describe('rotas e categorias', () => {

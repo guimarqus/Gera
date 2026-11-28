@@ -28,6 +28,7 @@ public class AppDbContext : IdentityDbContext<Usuario, IdentityRole<int>, int>, 
     public DbSet<Notificacao> Notificacoes => Set<Notificacao>();
     public DbSet<Denuncia> Denuncias => Set<Denuncia>();
     public DbSet<Bloqueio> Bloqueios => Set<Bloqueio>();
+    public DbSet<AuditoriaAdmin> AuditoriasAdmin => Set<AuditoriaAdmin>();
     public DbSet<Pagamento> Pagamentos => Set<Pagamento>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 

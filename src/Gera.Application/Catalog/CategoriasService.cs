@@ -19,4 +19,6 @@ public sealed class CategoriasService(IAppDbContext db, IMemoryCache cache) : IC
         cache.Set(CacheKey, tree, CacheDuration);
         return tree;
     }
+
+    public void InvalidarCache() => cache.Remove(CacheKey);
 }
